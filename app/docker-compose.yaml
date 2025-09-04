@@ -1,0 +1,19 @@
+version: '3.7'
+
+services:
+  timebook_ai_mcp_server_app:
+    image: timebook_ai_server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timebook_ai_server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+    networks:
+      - mcp_network
+
+networks:
+  mcp_network:
+    driver: bridge

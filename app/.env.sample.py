@@ -1,0 +1,5 @@
+OPENWEATHER_API_KEY="..."
+STATIC_GEO_URL="https://api.openweathermap.org/geo/1.0/direct?q="
+STATIC_WEATHER_URL="https://api.openweathermap.org/data/2.5/weather?"
+MCP_HOST="127.0.0.1"
+MCP_PORT="8000"

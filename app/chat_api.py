@@ -112,10 +112,10 @@ def _build_tool_definitions():
             ("find_free_slots", "READ: Find available meeting slots for given attendees. Use when user asks about availability.", FreeSlotsInput),
         ]
 
-    defs += [
-        ("summarize_day", "Get a daily briefing: calendar events, tasks due, weather, and news. Set city for weather, news_topic for headlines.", SummarizeDayInput),
-        ("plan_meeting", "Plan a meeting across timezones. Finds available slots, shows times in multiple timezones, optionally auto-books.", PlanMeetingInput),
-    ]
+    defs.append(("summarize_day", "Get a daily briefing: calendar events, tasks due, weather, and news. Set city for weather, news_topic for headlines.", SummarizeDayInput))
+
+    if settings.CALENDAR_PROVIDER:
+        defs.append(("plan_meeting", "Plan a meeting across timezones. Finds available slots, shows times in multiple timezones, optionally auto-books.", PlanMeetingInput))
 
     for name, description, schema_cls in defs:
         if schema_cls:
@@ -214,7 +214,8 @@ def _build_user_handlers(user_id: str) -> dict[str, Any]:
     from tools.assistant.service import AssistantService
     assistant_svc = AssistantService(tasks_service=tasks_svc)
     handlers["summarize_day"] = lambda args, svc=assistant_svc: _async_handler(svc.summarize_day, SummarizeDayInput(**args))
-    handlers["plan_meeting"] = lambda args, svc=assistant_svc: _async_handler(svc.plan_meeting, PlanMeetingInput(**args))
+    if settings.CALENDAR_PROVIDER:
+        handlers["plan_meeting"] = lambda args, svc=assistant_svc: _async_handler(svc.plan_meeting, PlanMeetingInput(**args))
 
     return handlers
 

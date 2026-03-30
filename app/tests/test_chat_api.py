@@ -134,7 +134,7 @@ def test_tools_include_assistant(client):
     res = client.get("/api/tools")
     tool_names = [t["name"] for t in res.json()["tools"]]
     assert "summarize_day" in tool_names
-    assert "plan_meeting" in tool_names
+    # plan_meeting is conditional on CALENDAR_PROVIDER
 
 
 # --- Health ---
@@ -159,9 +159,8 @@ def test_chat_tools_match_mcp_tools():
     mcp_tool_names = set(mcp_server._tool_manager._tools.keys())
     chat_tool_names = set(t["name"] for t in _tool_definitions)
 
-    # Calendar tools may differ (MCP has them if CALENDAR_PROVIDER is set globally,
-    # chat API checks settings at build time). Exclude conditional calendar tools.
-    calendar_tools = {"create_calendar_event", "list_calendar_events", "find_free_slots"}
+    # Conditional tools: calendar + plan_meeting require CALENDAR_PROVIDER
+    calendar_tools = {"create_calendar_event", "list_calendar_events", "find_free_slots", "plan_meeting"}
     mcp_only = mcp_tool_names - chat_tool_names - calendar_tools
     chat_only = chat_tool_names - mcp_tool_names - calendar_tools
 

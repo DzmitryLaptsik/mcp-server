@@ -1,5 +1,7 @@
+from mcp.types import ToolAnnotations
+
 from tools import mcp
-from tools.tasks.schemas import CreateTaskInput, ListTasksInput
+from tools.tasks.schemas import CreateTaskInput, ListTasksInput, ListTasksOutput, TaskResponse
 from tools.tasks.service import TasksService
 
 _tasks_service = None
@@ -12,11 +14,17 @@ def _get_tasks_service() -> TasksService:
     return _tasks_service
 
 
-@mcp.tool(description="Create a new task with title, priority, optional project, and due date. Use for tracking to-dos and action items.")
-async def create_task(input: CreateTaskInput):
+@mcp.tool(
+    description="Create a NEW task. Only use when the user explicitly asks to add, create, or make a task. Do NOT use when the user asks to see, list, or check tasks — use list_tasks instead.",
+    annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False),
+)
+async def create_task(input: CreateTaskInput) -> TaskResponse:
     return await _get_tasks_service().create_task(input)
 
 
-@mcp.tool(description="List tasks with optional filters: by status (pending/in_progress/done), priority (low/medium/high), project name, or overdue only.")
-async def list_tasks(input: ListTasksInput):
+@mcp.tool(
+    description="List existing tasks with optional filters by status, priority, project, or overdue. Use when the user asks to show, list, view, or check tasks.",
+    annotations=ToolAnnotations(readOnlyHint=True),
+)
+async def list_tasks(input: ListTasksInput) -> ListTasksOutput:
     return await _get_tasks_service().list_tasks(input)

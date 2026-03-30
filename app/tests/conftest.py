@@ -4,8 +4,8 @@ from pytest_mock import MockerFixture
 from tools.weather.service import WeatherService
 
 
-@pytest.fixture(autouse=True)
-def mock_env_vars(monkeypatch):
+@pytest.fixture
+def mock_weather_env(monkeypatch):
     """Patches the settings attributes where WeatherService actually reads them."""
     monkeypatch.setattr("tools.weather.service.settings.OPENWEATHER_API_KEY", "mock_api_key")
     monkeypatch.setattr("tools.weather.service.settings.STATIC_GEO_URL", "https://mock-geo.example.com/geo")
@@ -14,7 +14,7 @@ def mock_env_vars(monkeypatch):
 
 
 @pytest.fixture
-def weather_service():
+def weather_service(mock_weather_env):
     """Provides a fresh instance of WeatherService for each test."""
     return WeatherService()
 

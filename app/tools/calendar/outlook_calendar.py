@@ -68,9 +68,19 @@ class OutlookCalendarProvider:
         self._save_cache()
         return result["access_token"]
 
+    def _get_token(self) -> str:
+        """Get a valid access token, refreshing silently if expired."""
+        accounts = self.app.get_accounts()
+        if accounts:
+            result = self.app.acquire_token_silent(SCOPES, account=accounts[0])
+            if result and "access_token" in result:
+                self._save_cache()
+                return result["access_token"]
+        return self.token
+
     def _headers(self) -> dict:
         return {
-            "Authorization": f"Bearer {self.token}",
+            "Authorization": f"Bearer {self._get_token()}",
             "Content-Type": "application/json",
         }
 
@@ -242,7 +252,9 @@ class OutlookCalendarProvider:
 
         day_map = {"MO": "monday", "TU": "tuesday", "WE": "wednesday", "TH": "thursday", "FR": "friday", "SA": "saturday", "SU": "sunday"}
 
-        pattern = {"type": "weekly", "interval": 1}
+        freq_map = {"DAILY": "daily", "WEEKLY": "weekly", "MONTHLY": "absoluteMonthly", "YEARLY": "absoluteYearly"}
+        freq = parts.get("FREQ", "WEEKLY")
+        pattern = {"type": freq_map.get(freq, "weekly"), "interval": int(parts.get("INTERVAL", "1"))}
         if "BYDAY" in parts:
             pattern["daysOfWeek"] = [day_map[d] for d in parts["BYDAY"].split(",") if d in day_map]
 

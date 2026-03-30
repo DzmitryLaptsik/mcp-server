@@ -1,10 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
+from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 from zoneinfo import ZoneInfo
 
 from tools import mcp
+
+_READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
 
 class WorldTimeInput(BaseModel):
@@ -35,7 +38,7 @@ class TimezoneConvertOutput(BaseModel):
     targets: list[ConvertedTime]
 
 
-@mcp.tool(description="Get the current time in any timezone. Useful for checking what time it is in another city or country.")
+@mcp.tool(description="Get the current time in any timezone. Provide an IANA timezone name like 'Asia/Tokyo' or 'America/New_York'.", annotations=_READ_ONLY)
 def get_world_time(input: WorldTimeInput) -> WorldTimeOutput:
     tz = ZoneInfo(input.timezone)
     now = datetime.now(tz)
@@ -46,7 +49,7 @@ def get_world_time(input: WorldTimeInput) -> WorldTimeOutput:
     )
 
 
-@mcp.tool(description="Convert a time from one timezone to one or more target timezones. Great for scheduling across time zones.")
+@mcp.tool(description="Convert a time from one timezone to one or more target timezones. Provide time in HH:MM format, source timezone, and list of target timezones.", annotations=_READ_ONLY)
 def convert_timezone(input: TimezoneConvertInput) -> TimezoneConvertOutput:
     source_tz = ZoneInfo(input.source_timezone)
 

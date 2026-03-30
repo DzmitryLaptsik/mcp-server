@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import aiosqlite
 
-from tools.notes.schemas import CreateNoteInput, NoteResponse, SearchNotesInput, SearchNotesOutput
+from tools.notes.schemas import CreateNoteInput, ListNotesInput, NoteResponse, SearchNotesInput, SearchNotesOutput
 from utils.dotenv_config import settings
 
 
@@ -50,6 +50,33 @@ class NotesService:
             else:
                 query = "SELECT * FROM notes WHERE content LIKE ? ORDER BY created_at DESC"
                 params = (f"%{input.query}%",)
+
+            cursor = await db.execute(query, params)
+            rows = await cursor.fetchall()
+
+            notes = [
+                NoteResponse(
+                    id=row["id"],
+                    content=row["content"],
+                    tags=json.loads(row["tags"]),
+                    created_at=row["created_at"],
+                )
+                for row in rows
+            ]
+
+            return SearchNotesOutput(notes=notes, total=len(notes))
+
+    async def list_notes(self, input: ListNotesInput) -> SearchNotesOutput:
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_table(db)
+            db.row_factory = aiosqlite.Row
+
+            if input.tag:
+                query = "SELECT * FROM notes WHERE tags LIKE ? ORDER BY created_at DESC LIMIT ?"
+                params = (f"%\"{input.tag}\"%", input.limit)
+            else:
+                query = "SELECT * FROM notes ORDER BY created_at DESC LIMIT ?"
+                params = (input.limit,)
 
             cursor = await db.execute(query, params)
             rows = await cursor.fetchall()

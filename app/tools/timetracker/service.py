@@ -3,7 +3,12 @@ from datetime import datetime, timedelta, timezone
 import aiosqlite
 
 from tools.timetracker.schemas import (
+    ActiveTimer,
+    ActiveTimersOutput,
+    ListTimeEntriesInput,
+    ListTimeEntriesOutput,
     ProjectTime,
+    TimeEntry,
     TimeSummaryInput,
     TimeSummaryOutput,
     TrackAction,
@@ -54,16 +59,29 @@ class TimeTrackerService:
                         message=f"Timer already running for '{input.project}'.",
                     )
 
+                # Check for previous completed sessions
+                cursor = await db.execute(
+                    "SELECT COUNT(*) as cnt FROM time_entries WHERE project = ? AND stopped_at IS NOT NULL",
+                    (input.project,),
+                )
+                prev_row = await cursor.fetchone()
+                prev_count = prev_row["cnt"] if prev_row else 0
+
                 now = datetime.now(timezone.utc).isoformat()
                 await db.execute(
                     "INSERT INTO time_entries (project, started_at) VALUES (?, ?)",
                     (input.project, now),
                 )
                 await db.commit()
+
+                msg = f"Started tracking time for '{input.project}' (new session)."
+                if prev_count > 0:
+                    msg += f" {prev_count} previous session(s) are preserved."
+
                 return TrackTimeOutput(
                     action="start",
                     project=input.project,
-                    message=f"Started tracking time for '{input.project}'.",
+                    message=msg,
                 )
 
             else:  # STOP
@@ -100,7 +118,9 @@ class TimeTrackerService:
         now = datetime.now(timezone.utc)
 
         if input.end_date:
-            end = datetime.strptime(input.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            end = datetime.strptime(input.end_date, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, tzinfo=timezone.utc
+            )
         else:
             end = now
 
@@ -145,3 +165,77 @@ class TimeTrackerService:
                 total_minutes=total,
                 total_formatted=_format_duration(total),
             )
+
+    async def list_active_timers(self) -> ActiveTimersOutput:
+        now = datetime.now(timezone.utc)
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_table(db)
+            db.row_factory = aiosqlite.Row
+
+            cursor = await db.execute(
+                "SELECT project, started_at FROM time_entries WHERE stopped_at IS NULL"
+            )
+            rows = await cursor.fetchall()
+
+            timers = []
+            for row in rows:
+                started = datetime.fromisoformat(row["started_at"])
+                minutes = int((now - started).total_seconds() / 60)
+                timers.append(ActiveTimer(
+                    project=row["project"],
+                    started_at=row["started_at"],
+                    running_for=_format_duration(minutes),
+                ))
+
+            # Count completed sessions for context
+            cursor = await db.execute(
+                "SELECT COUNT(*) as cnt FROM time_entries WHERE stopped_at IS NOT NULL"
+            )
+            row = await cursor.fetchone()
+            completed = row["cnt"] if row else 0
+
+            return ActiveTimersOutput(timers=timers, total=len(timers), total_completed_sessions=completed)
+
+    async def list_time_entries(self, input: ListTimeEntriesInput) -> ListTimeEntriesOutput:
+        now = datetime.now(timezone.utc)
+        async with aiosqlite.connect(self.db_path) as db:
+            await self._ensure_table(db)
+            db.row_factory = aiosqlite.Row
+
+            if input.project:
+                cursor = await db.execute(
+                    "SELECT * FROM time_entries WHERE project = ? ORDER BY started_at DESC LIMIT ?",
+                    (input.project, input.limit),
+                )
+            else:
+                cursor = await db.execute(
+                    "SELECT * FROM time_entries ORDER BY started_at DESC LIMIT ?",
+                    (input.limit,),
+                )
+            rows = await cursor.fetchall()
+
+            entries = []
+            for row in rows:
+                started = datetime.fromisoformat(row["started_at"])
+                if row["stopped_at"]:
+                    stopped = datetime.fromisoformat(row["stopped_at"])
+                    minutes = int((stopped - started).total_seconds() / 60)
+                    entries.append(TimeEntry(
+                        id=row["id"],
+                        project=row["project"],
+                        started_at=row["started_at"],
+                        stopped_at=row["stopped_at"],
+                        duration=_format_duration(minutes),
+                        status="completed",
+                    ))
+                else:
+                    minutes = int((now - started).total_seconds() / 60)
+                    entries.append(TimeEntry(
+                        id=row["id"],
+                        project=row["project"],
+                        started_at=row["started_at"],
+                        duration=_format_duration(minutes),
+                        status="running",
+                    ))
+
+            return ListTimeEntriesOutput(entries=entries, total=len(entries))

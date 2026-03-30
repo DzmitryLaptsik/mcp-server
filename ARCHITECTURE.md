@@ -132,7 +132,9 @@ app/
 │   ├── test_news.py                # 3 tests
 │   ├── test_calendar_google.py     # 4 tests
 │   ├── test_calendar_outlook.py    # 4 tests
-│   └── test_assistant.py           # 9 tests — 63 total
+│   ├── test_assistant.py           # 9 tests
+│   ├── test_auth.py               # 13 tests
+│   └── test_chat_api.py           # 12 tests — 90 total
 ├── pyproject.toml
 ├── Dockerfile
 ├── docker-compose.yaml
@@ -261,7 +263,40 @@ The chat API bridges the React frontend with LLM providers via OpenRouter:
 
 ---
 
-## 7. Frontend (`frontend/`)
+## 7. Data Tenancy Model
+
+The project has two access paths with different data isolation behavior:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   MCP Server (port 8000)                        │
+│  • Single-user / shared data                                    │
+│  • Tools read/write to default DB paths (notes.db, tasks.db)   │
+│  • Resources expose global data                                 │
+│  • No authentication                                            │
+│  • Designed for: local MCP clients (Claude Desktop, Cursor)     │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                   Chat API (port 8001)                           │
+│  • Multi-user / per-user data isolation                         │
+│  • Each user gets own DB files in data/{user_id}/               │
+│  • API key auth (Bearer token)                                  │
+│  • Designed for: React frontend, multi-user demos               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why two modes?** The MCP protocol is designed for local, single-user clients (your IDE, your desktop app). The chat API adds multi-user support for the web frontend. Both paths use the same tool services — the difference is how DB paths are resolved.
+
+**Shared tools** (same behavior in both paths): weather, forecast, temperature, timezone, news — these are stateless or use external APIs.
+
+**User-scoped tools** (isolated in chat API, global in MCP): notes, tasks, reminders, time tracking — these read/write SQLite databases.
+
+**Calendar tools**: use provider-level auth (Google/Outlook OAuth), shared across paths.
+
+---
+
+## 8. Frontend (`frontend/`)
 
 React + Vite single-page chat application:
 
@@ -275,9 +310,9 @@ Vite dev server proxies `/api` to the chat API backend (port 8001).
 
 ---
 
-## 8. Testing Architecture
+## 9. Testing Architecture
 
-63 tests across 12 test files:
+90 tests across 14 test files:
 
 ```
 tests/
@@ -305,7 +340,7 @@ tests/
 
 ---
 
-## 9. Infrastructure
+## 10. Infrastructure
 
 ### Docker
 

@@ -18,8 +18,8 @@ from utils.dotenv_config import settings
 
 
 class AssistantService:
-    def __init__(self):
-        self._tasks_service = TasksService()
+    def __init__(self, tasks_service: TasksService | None = None):
+        self._tasks_service = tasks_service or TasksService()
 
     async def summarize_day(self, input: SummarizeDayInput) -> SummarizeDayOutput:
         today = input.date or datetime.now(ZoneInfo(input.timezone)).strftime("%Y-%m-%d")
@@ -155,9 +155,11 @@ class AssistantService:
         )
 
     async def _get_tasks_summary(self, date: str) -> DaySummaryTasks:
-        # Due today: all pending/in_progress tasks (we can't filter by exact due_date easily, so get all pending)
-        all_tasks = await self._tasks_service.list_tasks(ListTasksInput(status=TaskStatus.PENDING))
-        due_today = sum(1 for t in all_tasks.tasks if t.due_date == date)
+        # Due today: pending + in_progress tasks with matching due_date
+        pending = await self._tasks_service.list_tasks(ListTasksInput(status=TaskStatus.PENDING))
+        in_progress = await self._tasks_service.list_tasks(ListTasksInput(status=TaskStatus.IN_PROGRESS))
+        all_active = pending.tasks + in_progress.tasks
+        due_today = sum(1 for t in all_active if t.due_date == date)
 
         overdue = await self._tasks_service.list_tasks(ListTasksInput(overdue=True))
 

@@ -19,7 +19,16 @@ from starlette.routing import Route
 from auth import get_user_by_api_key, get_user_db_path, login
 from utils.dotenv_config import settings
 
-SYSTEM_PROMPT = "You are a helpful personal assistant. You have access to tools for weather, notes, tasks, time tracking, reminders, news, and timezone conversion. Use them to help the user. Be concise and friendly."
+SYSTEM_PROMPT = """You are a helpful personal assistant with access to various tools. Be concise and friendly.
+
+IMPORTANT RULES for tool usage:
+- When the user asks to SEE, SHOW, LIST, or CHECK existing data, ONLY use read tools (list_reminders, list_tasks, search_notes, get_time_summary). Do NOT create new items.
+- ONLY use create/write tools (set_reminder, create_note, create_task, track_time, create_calendar_event) when the user EXPLICITLY asks to create, add, save, set, or start something NEW.
+- If the user says "show me my reminders" or "what reminders do I have", call list_reminders. Do NOT call set_reminder.
+- If the user says "show my notes" or "what did I write about X", call search_notes. Do NOT call create_note.
+- If the user says "show my tasks" or "what's on my todo list", call list_tasks. Do NOT call create_task.
+- Never create duplicate items. If you already created something in this conversation, do not create it again.
+- Use one tool at a time when possible. Do not call multiple tools unless the user's request genuinely requires combining data from different sources."""
 
 # --- Tool metadata: display names, icons, categories for the frontend ---
 
@@ -31,13 +40,21 @@ TOOL_META = {
     "convert_timezone":    {"label": "Timezone Converter",    "icon": "🌍", "category": "Time",         "template": "Convert {time} from {source timezone} to {target timezone}"},
     "create_note":         {"label": "Create Note",           "icon": "📝", "category": "Notes",        "template": "Save a note: {your note text}"},
     "search_notes":        {"label": "Search Notes",          "icon": "🔍", "category": "Notes",        "template": "Search my notes for {keyword}"},
+    "list_notes":          {"label": "All Notes",             "icon": "📒", "category": "Notes",        "template": "Show all my notes"},
     "create_task":         {"label": "Create Task",           "icon": "✅", "category": "Tasks",        "template": "Create a task: {title}, {priority} priority, due {date}"},
     "list_tasks":          {"label": "List Tasks",            "icon": "📋", "category": "Tasks",        "template": "Show my {pending/overdue/all} tasks"},
     "track_time":          {"label": "Time Tracker",          "icon": "⏱️", "category": "Productivity", "template": "{Start/Stop} tracking time on {project name}"},
+    "list_active_timers":  {"label": "Active Timers",         "icon": "🔄", "category": "Productivity", "template": "What timers are running?"},
+    "list_time_entries":   {"label": "Time Log",              "icon": "📜", "category": "Productivity", "template": "Show my time tracking history"},
     "get_time_summary":    {"label": "Time Report",           "icon": "📊", "category": "Productivity", "template": "How much time did I spend this week?"},
     "set_reminder":        {"label": "Set Reminder",          "icon": "🔔", "category": "Productivity", "template": "Remind me to {task} in {minutes} minutes"},
     "list_reminders":      {"label": "List Reminders",        "icon": "📌", "category": "Productivity", "template": "Show my pending reminders"},
     "get_news":            {"label": "Latest News",           "icon": "📰", "category": "Information",  "template": "What's the latest news on {topic}?"},
+    "create_calendar_event": {"label": "Create Event",       "icon": "📅", "category": "Calendar",     "template": "Schedule a meeting called {title} on {date} at {time} for {duration} minutes"},
+    "list_calendar_events":  {"label": "List Events",        "icon": "🗓️", "category": "Calendar",     "template": "What events do I have from {start date} to {end date}?"},
+    "find_free_slots":       {"label": "Find Free Slots",    "icon": "🕐", "category": "Calendar",     "template": "When can I meet with {email} this week for {duration} minutes?"},
+    "summarize_day":         {"label": "Daily Briefing",     "icon": "☀️", "category": "Assistant",    "template": "Give me my daily briefing for today"},
+    "plan_meeting":          {"label": "Plan Meeting",       "icon": "🤝", "category": "Assistant",    "template": "Plan a {duration}-minute meeting with {attendees} this week"},
 }
 
 # --- Tool definitions (shared across users, no state) ---
@@ -53,48 +70,63 @@ def _build_tool_definitions():
     from tools.temperature import TemperatureInput
     from tools.timezone import TimezoneConvertInput, WorldTimeInput
     from tools.weather.schemas import ForecastInput, WeatherInput
-    from tools.notes.schemas import CreateNoteInput, SearchNotesInput
+    from tools.notes.schemas import CreateNoteInput, ListNotesInput, SearchNotesInput
     from tools.tasks.schemas import CreateTaskInput, ListTasksInput
-    from tools.timetracker.schemas import TimeSummaryInput, TrackTimeInput
-    from tools.reminders.schemas import SetReminderInput
+    from tools.timetracker.schemas import ListTimeEntriesInput, TimeSummaryInput, TrackTimeInput
+    from tools.reminders.schemas import ListRemindersInput, SetReminderInput
     from tools.news.schemas import NewsInput
+    from tools.assistant.schemas import PlanMeetingInput, SummarizeDayInput
 
     defs = [
-        ("convert_temperature", "Converts temperatures between Celsius and Fahrenheit.", TemperatureInput),
-        ("get_world_time", "Get the current time in any timezone.", WorldTimeInput),
+        ("convert_temperature", "Converts temperatures between Celsius and Fahrenheit. Provide a value and its unit type.", TemperatureInput),
+        ("get_world_time", "Get the current time in any timezone. Provide an IANA timezone name like 'Asia/Tokyo'.", WorldTimeInput),
         ("convert_timezone", "Convert a time from one timezone to one or more target timezones.", TimezoneConvertInput),
     ]
 
     if settings.OPENWEATHER_API_KEY:
-        defs.append(("get_weather", "Get current weather for a location.", WeatherInput))
+        defs.append(("get_weather", "Get current weather for a location. Provide city name or lat/lon.", WeatherInput))
         defs.append(("get_forecast", "Get a multi-day weather forecast (1-5 days) for a location.", ForecastInput))
 
     defs += [
-        ("create_note", "Save a note with optional tags for later retrieval.", CreateNoteInput),
-        ("search_notes", "Search saved notes by keyword or phrase, optionally filtered by tag.", SearchNotesInput),
-        ("create_task", "Create a new task with title, priority, optional project, and due date.", CreateTaskInput),
-        ("list_tasks", "List tasks with optional filters: by status, priority, project, or overdue only.", ListTasksInput),
-        ("track_time", "Start or stop tracking time on a project.", TrackTimeInput),
-        ("get_time_summary", "Get a summary of tracked time by project for a date range.", TimeSummaryInput),
-        ("set_reminder", "Set a reminder with a message at an absolute time or relative offset in minutes.", SetReminderInput),
-        ("list_reminders", "List pending reminders.", None),
+        ("create_note", "WRITE: Save a NEW note. Only call this when user explicitly asks to save/create/write a note. Do NOT call when user asks to see or search notes.", CreateNoteInput),
+        ("search_notes", "READ: Search existing notes by keyword or phrase. Use when user asks to find or search for specific notes.", SearchNotesInput),
+        ("list_notes", "READ: List all notes, most recent first. Use when user asks to show, list, or see all their notes. Optionally filter by tag.", ListNotesInput),
+        ("create_task", "WRITE: Create a NEW task. Only call this when user explicitly asks to add/create a task. Do NOT call when user asks to see or list tasks.", CreateTaskInput),
+        ("list_tasks", "READ: List existing tasks with optional filters by status, priority, project, or overdue. Use this when user asks to show, list, or check tasks.", ListTasksInput),
+        ("track_time", "WRITE: Start or stop a time tracking timer on a project. Only call when user explicitly asks to start/stop tracking.", TrackTimeInput),
+        ("list_active_timers", "READ: Show currently running timers. Use when user asks what timers are active or running right now.", None),
+        ("list_time_entries", "READ: Show time tracking history — individual sessions with start/stop times and durations. Use when user asks to see their tracked time, time entries, or time log.", ListTimeEntriesInput),
+        ("get_time_summary", "READ: Get an aggregated summary of total time per project for a date range. Use when user asks how much total time was spent.", TimeSummaryInput),
+        ("set_reminder", "WRITE: Create a NEW reminder. Only call this when user explicitly asks to set/create/add a reminder. Do NOT call when user asks to see or list reminders.", SetReminderInput),
+        ("list_reminders", "READ: List existing pending reminders. Use this when user asks to show, list, or check reminders.", ListRemindersInput),
     ]
 
     if settings.NEWSAPI_KEY:
-        defs.append(("get_news", "Get latest news articles on a topic.", NewsInput))
+        defs.append(("get_news", "Get latest news articles on a topic. Provide a keyword and optional max_results.", NewsInput))
+
+    if settings.CALENDAR_PROVIDER:
+        from tools.calendar.schemas import CreateEventInput, FreeSlotsInput, ListEventsInput
+        defs += [
+            ("create_calendar_event", "WRITE: Create a NEW calendar event. Only call when user explicitly asks to schedule/create an event.", CreateEventInput),
+            ("list_calendar_events", "READ: List existing calendar events within a date range. Use when user asks to show/check calendar.", ListEventsInput),
+            ("find_free_slots", "READ: Find available meeting slots for given attendees. Use when user asks about availability.", FreeSlotsInput),
+        ]
+
+    defs += [
+        ("summarize_day", "Get a daily briefing: calendar events, tasks due, weather, and news. Set city for weather, news_topic for headlines.", SummarizeDayInput),
+        ("plan_meeting", "Plan a meeting across timezones. Finds available slots, shows times in multiple timezones, optionally auto-books.", PlanMeetingInput),
+    ]
 
     for name, description, schema_cls in defs:
         if schema_cls:
             input_schema = schema_cls.model_json_schema()
         else:
-            input_schema = {
-                "type": "object",
-                "properties": {
-                    "include_fired": {"type": "boolean", "description": "Include already-fired reminders", "default": False}
-                },
-            }
-
-        _tool_definitions.append({"name": name, "description": description, "input_schema": input_schema})
+            input_schema = {"type": "object", "properties": {}}
+        _tool_definitions.append({
+            "name": name,
+            "description": description,
+            "input_schema": input_schema,
+        })
 
     # Convert to OpenAI format for OpenRouter
     for tool in _tool_definitions:
@@ -133,11 +165,12 @@ def _build_user_handlers(user_id: str) -> dict[str, Any]:
         handlers["get_forecast"] = lambda args, svc=weather_svc: _async_handler(svc.get_forecast, ForecastInput(**args))
 
     # User-scoped services with per-user DB paths
-    from tools.notes.schemas import CreateNoteInput, SearchNotesInput
+    from tools.notes.schemas import CreateNoteInput, ListNotesInput, SearchNotesInput
     from tools.notes.service import NotesService
     notes_svc = NotesService(db_path=get_user_db_path(user_id, "notes.db"))
     handlers["create_note"] = lambda args, svc=notes_svc: _async_handler(svc.create_note, CreateNoteInput(**args))
     handlers["search_notes"] = lambda args, svc=notes_svc: _async_handler(svc.search_notes, SearchNotesInput(**args))
+    handlers["list_notes"] = lambda args, svc=notes_svc: _async_handler(svc.list_notes, ListNotesInput(**args))
 
     from tools.tasks.schemas import CreateTaskInput, ListTasksInput
     from tools.tasks.service import TasksService
@@ -145,17 +178,21 @@ def _build_user_handlers(user_id: str) -> dict[str, Any]:
     handlers["create_task"] = lambda args, svc=tasks_svc: _async_handler(svc.create_task, CreateTaskInput(**args))
     handlers["list_tasks"] = lambda args, svc=tasks_svc: _async_handler(svc.list_tasks, ListTasksInput(**args))
 
-    from tools.timetracker.schemas import TimeSummaryInput, TrackTimeInput
+    from tools.timetracker.schemas import ListTimeEntriesInput, TimeSummaryInput, TrackTimeInput
     from tools.timetracker.service import TimeTrackerService
     tt_svc = TimeTrackerService(db_path=get_user_db_path(user_id, "timetracker.db"))
     handlers["track_time"] = lambda args, svc=tt_svc: _async_handler(svc.track_time, TrackTimeInput(**args))
+    handlers["list_active_timers"] = lambda args, svc=tt_svc: _async_handler_no_input(svc.list_active_timers)
+    handlers["list_time_entries"] = lambda args, svc=tt_svc: _async_handler(svc.list_time_entries, ListTimeEntriesInput(**args))
     handlers["get_time_summary"] = lambda args, svc=tt_svc: _async_handler(svc.get_time_summary, TimeSummaryInput(**args))
 
-    from tools.reminders.schemas import SetReminderInput
+    from tools.reminders.schemas import ListRemindersInput, SetReminderInput
     from tools.reminders.service import RemindersService
     rem_svc = RemindersService(db_path=get_user_db_path(user_id, "reminders.db"))
     handlers["set_reminder"] = lambda args, svc=rem_svc: _async_handler(svc.set_reminder, SetReminderInput(**args))
-    handlers["list_reminders"] = lambda args, svc=rem_svc: _async_handler(svc.list_reminders, args.get("include_fired", False))
+    handlers["list_reminders"] = lambda args, svc=rem_svc: _async_handler(
+        svc.list_reminders, ListRemindersInput(**args).include_fired or False
+    )
 
     # News (shared, no user data)
     if settings.NEWSAPI_KEY:
@@ -164,21 +201,51 @@ def _build_user_handlers(user_id: str) -> dict[str, Any]:
         news_svc = NewsService()
         handlers["get_news"] = lambda args, svc=news_svc: _async_handler(svc.get_news, NewsInput(**args))
 
+    # Calendar (shared, provider-level auth)
+    if settings.CALENDAR_PROVIDER:
+        from tools.calendar.schemas import CreateEventInput, FreeSlotsInput, ListEventsInput
+        from tools.calendar.tool import _get_calendar_provider
+        handlers["create_calendar_event"] = lambda args: _async_handler(_get_calendar_provider().create_event, CreateEventInput(**args))
+        handlers["list_calendar_events"] = lambda args: _async_handler(_get_calendar_provider().list_events, ListEventsInput(**args))
+        handlers["find_free_slots"] = lambda args: _async_handler(_get_calendar_provider().find_free_slots, FreeSlotsInput(**args))
+
+    # Assistant (uses user-scoped tasks service)
+    from tools.assistant.schemas import PlanMeetingInput, SummarizeDayInput
+    from tools.assistant.service import AssistantService
+    assistant_svc = AssistantService(tasks_service=tasks_svc)
+    handlers["summarize_day"] = lambda args, svc=assistant_svc: _async_handler(svc.summarize_day, SummarizeDayInput(**args))
+    handlers["plan_meeting"] = lambda args, svc=assistant_svc: _async_handler(svc.plan_meeting, PlanMeetingInput(**args))
+
     return handlers
 
 
-# Simple in-memory cache for user handlers (avoid re-creating per request)
-_user_handlers_cache: dict[str, dict[str, Any]] = {}
+# LRU cache for user handlers (max 100 users, evicts oldest)
+from collections import OrderedDict
+
+_user_handlers_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
+_USER_CACHE_MAX = 100
 
 
 def _get_user_handlers(user_id: str) -> dict[str, Any]:
-    if user_id not in _user_handlers_cache:
-        _user_handlers_cache[user_id] = _build_user_handlers(user_id)
-    return _user_handlers_cache[user_id]
+    if user_id in _user_handlers_cache:
+        _user_handlers_cache.move_to_end(user_id)
+        return _user_handlers_cache[user_id]
+    handlers = _build_user_handlers(user_id)
+    _user_handlers_cache[user_id] = handlers
+    if len(_user_handlers_cache) > _USER_CACHE_MAX:
+        _user_handlers_cache.popitem(last=False)
+    return handlers
 
 
 async def _async_handler(method, input_data):
     result = await method(input_data)
+    if hasattr(result, "model_dump"):
+        return result.model_dump()
+    return result
+
+
+async def _async_handler_no_input(method):
+    result = await method()
     if hasattr(result, "model_dump"):
         return result.model_dump()
     return result
@@ -264,8 +331,12 @@ async def chat(request: Request) -> JSONResponse:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
     content_length = request.headers.get("content-length")
-    if content_length and int(content_length) > MAX_REQUEST_SIZE:
-        return JSONResponse({"error": "Request too large"}, status_code=413)
+    if content_length:
+        try:
+            if int(content_length) > MAX_REQUEST_SIZE:
+                return JSONResponse({"error": "Request too large"}, status_code=413)
+        except ValueError:
+            return JSONResponse({"error": "Invalid Content-Length header"}, status_code=400)
 
     body = await request.json()
     messages = body.get("messages", [])
@@ -297,7 +368,7 @@ async def chat(request: Request) -> JSONResponse:
     max_rounds = 5
     round_num = 0
 
-    SIDE_EFFECT_TOOLS = {"create_note", "create_task", "set_reminder", "track_time"}
+    SIDE_EFFECT_TOOLS = {"create_note", "create_task", "set_reminder", "track_time", "create_calendar_event"}
 
     while choice["finish_reason"] == "tool_calls" and round_num < max_rounds:
         round_num += 1

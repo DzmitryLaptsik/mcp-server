@@ -1,6 +1,7 @@
-import json
+import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -78,7 +79,9 @@ class GoogleCalendarProvider:
         if input.recurrence:
             event_body["recurrence"] = [input.recurrence]
 
-        event = self.service.events().insert(calendarId="primary", body=event_body).execute()
+        event = await asyncio.to_thread(
+            self.service.events().insert(calendarId="primary", body=event_body).execute
+        )
 
         return EventResponse(
             id=event["id"],
@@ -95,7 +98,7 @@ class GoogleCalendarProvider:
         time_min = f"{input.start_date}T00:00:00"
         time_max = f"{input.end_date}T23:59:59"
 
-        events_result = (
+        events_result = await asyncio.to_thread(
             self.service.events()
             .list(
                 calendarId="primary",
@@ -105,7 +108,7 @@ class GoogleCalendarProvider:
                 orderBy="startTime",
                 timeZone=input.timezone,
             )
-            .execute()
+            .execute
         )
 
         events = []
@@ -134,7 +137,9 @@ class GoogleCalendarProvider:
             "items": [{"id": email} for email in input.attendees],
         }
 
-        freebusy = self.service.freebusy().query(body=body).execute()
+        freebusy = await asyncio.to_thread(
+            self.service.freebusy().query(body=body).execute
+        )
 
         # Collect all busy periods across all attendees
         all_busy = []
@@ -156,9 +161,6 @@ class GoogleCalendarProvider:
                 merged_busy.append((start, end))
 
         # Find free slots between busy periods (9am-6pm working hours)
-        from zoneinfo import ZoneInfo
-        from datetime import timedelta
-
         tz = ZoneInfo(input.timezone)
         start_date = datetime.strptime(input.start_date, "%Y-%m-%d").replace(tzinfo=tz)
         end_date = datetime.strptime(input.end_date, "%Y-%m-%d").replace(tzinfo=tz)
@@ -170,12 +172,10 @@ class GoogleCalendarProvider:
             day_start = current_date.replace(hour=9, minute=0, second=0)
             day_end = current_date.replace(hour=18, minute=0, second=0)
 
-            # Skip weekends
             if current_date.weekday() >= 5:
                 current_date += timedelta(days=1)
                 continue
 
-            # Find free windows in this day
             cursor = day_start
             for busy_start, busy_end in merged_busy:
                 busy_start = busy_start.astimezone(tz)
@@ -202,6 +202,5 @@ class GoogleCalendarProvider:
         return FreeSlotsOutput(slots=slots, total=len(slots))
 
     def _to_rfc3339(self, dt_str: str, timezone: str) -> str:
-        from zoneinfo import ZoneInfo
         dt = datetime.fromisoformat(dt_str).replace(tzinfo=ZoneInfo(timezone))
         return dt.isoformat()

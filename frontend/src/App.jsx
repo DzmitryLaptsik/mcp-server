@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import Markdown from 'react-markdown'
 import './App.css'
 
 const SUGGESTIONS = [
@@ -8,8 +9,6 @@ const SUGGESTIONS = [
   "Create a task: update the landing page, high priority",
   "Start tracking time on API integration",
   "Set a reminder in 30 minutes to take a break",
-  "How much time did I spend this week?",
-  "Convert 3pm New York to London and Tokyo",
 ]
 
 const MODELS = [
@@ -46,6 +45,12 @@ function authHeaders(extra = {}) {
   return { ...extra, 'Authorization': `Bearer ${auth.api_key}` }
 }
 
+// --- Clipboard helper ---
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).catch(() => {})
+}
+
 // --- Components ---
 
 function ToolCall({ call }) {
@@ -74,12 +79,34 @@ function ToolCall({ call }) {
 }
 
 function Message({ message }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (e) => {
+    e.stopPropagation()
+    copyToClipboard(message.content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   return (
     <div className={`message ${message.role}`}>
-      <div className="message-content">{message.content}</div>
-      {message.model && (
-        <div className="message-model">{message.model}</div>
-      )}
+      <div className="message-content">
+        {message.role === 'assistant' ? (
+          <Markdown>{message.content}</Markdown>
+        ) : (
+          message.content
+        )}
+      </div>
+      <div className="message-footer">
+        {message.model && (
+          <span className="message-model">{message.model}</span>
+        )}
+        {message.role === 'assistant' && message.content && (
+          <button className="copy-btn" onClick={handleCopy} title="Copy to clipboard">
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        )}
+      </div>
       {message.toolCalls && message.toolCalls.length > 0 && (
         <div className="tool-calls">
           {message.toolCalls.map((call, i) => (
@@ -207,7 +234,6 @@ function App() {
   const textareaRef = useRef(null)
   const toolsPanelRef = useRef(null)
 
-  // Verify stored auth is still valid on mount
   useEffect(() => {
     if (!user?.api_key) return
     fetch('/api/auth/me', { headers: authHeaders() })
@@ -238,6 +264,13 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  // Auto-focus textarea when loading finishes
+  useEffect(() => {
+    if (!loading && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [loading])
+
   const handleLogin = (data) => {
     setUser(data)
     setMessages([])
@@ -247,6 +280,11 @@ function App() {
     clearAuth()
     setUser(null)
     setMessages([])
+  }
+
+  const handleNewChat = () => {
+    setMessages([])
+    setError(null)
   }
 
   const selectTool = useCallback((template) => {
@@ -326,6 +364,7 @@ function App() {
       setError(err.message || 'Failed to send message')
     } finally {
       setLoading(false)
+      setTimeout(() => textareaRef.current?.focus(), 0)
     }
   }
 
@@ -336,7 +375,6 @@ function App() {
     }
   }
 
-  // Show login if not authenticated
   if (!user?.api_key) {
     return <LoginScreen onLogin={handleLogin} />
   }
@@ -346,7 +384,14 @@ function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>MCP Assistant</h1>
+        <div className="header-left">
+          <h1>MCP Assistant</h1>
+          {hasMessages && (
+            <button className="new-chat-btn" onClick={handleNewChat} title="New chat">
+              + New
+            </button>
+          )}
+        </div>
         <div className="header-right">
           <ModelSelector model={model} onChange={setModel} disabled={loading} />
           {tools.length > 0 && (
@@ -435,7 +480,12 @@ function App() {
         </div>
       )}
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button className="error-dismiss" onClick={() => setError(null)}>x</button>
+        </div>
+      )}
 
       <div className="input-area">
         <form className="input-form" onSubmit={(e) => { e.preventDefault(); sendMessage() }}>

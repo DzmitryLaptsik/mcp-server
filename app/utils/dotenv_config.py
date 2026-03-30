@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     OPENROUTER_MODEL: str = "anthropic/claude-sonnet-4"
     CHAT_API_PORT: int = 8001
-    MCP_HOST: str = "0.0.0.0"
+    MCP_HOST: str = "127.0.0.1"
     MCP_PORT: int = 8000
 
     model_config = {"env_file": ".env"}

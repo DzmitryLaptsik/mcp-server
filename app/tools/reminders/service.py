@@ -60,14 +60,21 @@ class RemindersService:
             await self._ensure_table(db)
             db.row_factory = aiosqlite.Row
 
+            # Auto-mark expired reminders as fired
+            now = datetime.now(timezone.utc).isoformat()
+            await db.execute(
+                "UPDATE reminders SET is_fired = 1 WHERE is_fired = 0 AND remind_at < ?",
+                (now,),
+            )
+            await db.commit()
+
             if include_fired:
                 query = "SELECT * FROM reminders ORDER BY remind_at ASC"
-                params = ()
             else:
+                # Only show future (unfired) reminders
                 query = "SELECT * FROM reminders WHERE is_fired = 0 ORDER BY remind_at ASC"
-                params = ()
 
-            cursor = await db.execute(query, params)
+            cursor = await db.execute(query)
             rows = await cursor.fetchall()
 
             reminders = [

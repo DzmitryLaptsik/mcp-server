@@ -20,6 +20,11 @@ class SearchNotesInput(BaseModel):
     tag: Optional[str] = Field(None, description="Optional tag to filter notes by")
 
 
+class ListNotesInput(BaseModel):
+    tag: Optional[str] = Field(None, description="Optional tag to filter notes by")
+    limit: int = Field(20, ge=1, le=100, description="Maximum number of notes to return")
+
+
 class SearchNotesOutput(BaseModel):
     notes: list[NoteResponse]
     total: int = Field(..., description="Total number of matching notes")

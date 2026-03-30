@@ -1,5 +1,6 @@
 from enum import Enum
 
+from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
 from tools import mcp
@@ -20,7 +21,10 @@ class TemperatureOutput(BaseModel):
     type: TemperatureType
 
 
-@mcp.tool(description="Converts temperatures between Celsius and Fahrenheit.")
+@mcp.tool(
+    description="Converts temperatures between Celsius and Fahrenheit. Provide a value and its unit type.",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
+)
 def convert_temperature(temperature_data: TemperatureInput) -> TemperatureOutput:
     if temperature_data.type == TemperatureType.CELSIUS:
         return TemperatureOutput(

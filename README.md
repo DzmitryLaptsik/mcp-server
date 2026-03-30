@@ -1,6 +1,6 @@
 # MCP Personal Assistant Server
 
-A full-featured [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server with 19 AI-callable tools and a React chat frontend. Built with FastMCP, Python, and OpenRouter for multi-model LLM support.
+A full-featured [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server with 22 AI-callable tools and a React chat frontend. Built with FastMCP, Python, and OpenRouter for multi-model LLM support.
 
 ## Features
 
@@ -10,9 +10,9 @@ A full-featured [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 |----------|-------|
 | Weather | Current weather, 5-day forecast, temperature conversion |
 | Time | World clock, timezone converter |
-| Notes | Create and search notes with tags |
+| Notes | Create, list, and search notes with tags |
 | Tasks | Task management with priority, project, and due dates |
-| Productivity | Time tracking, reminders |
+| Productivity | Time tracking (start/stop, history, active timers, summaries), reminders |
 | Information | News search |
 | Calendar | Google Calendar + Outlook integration (create, list, find free slots) |
 | Smart Assistant | Daily briefing, cross-timezone meeting planner |
@@ -105,7 +105,8 @@ mcp-server/
 ├── app/                        # Backend
 │   ├── main.py                 # MCP server entry point
 │   ├── chat_api.py             # Chat API (LLM + tools + metadata)
-│   ├── tools/                  # 19 auto-discovered tools
+│   ├── auth.py                 # User auth (hashed API keys, per-user data)
+│   ├── tools/                  # 22 auto-discovered tools
 │   │   ├── temperature.py      # Simple tool (single file)
 │   │   ├── timezone.py         # Simple tool (single file)
 │   │   ├── weather/            # Complex tool (sub-package)
@@ -115,11 +116,16 @@ mcp-server/
 │   │   ├── reminders/          # SQLite-backed
 │   │   ├── news/               # NewsAPI integration
 │   │   ├── calendar/           # Google + Outlook backends
-│   │   └── assistant/          # Chains other tools
+│   │   ├── assistant/          # Chains other tools
+│   │   ├── resources.py        # MCP Resources (read-only context)
+│   │   └── prompts.py          # MCP Prompts (workflow templates)
 │   ├── utils/dotenv_config.py  # Settings (pydantic-settings)
-│   └── tests/                  # 63 tests
+│   └── tests/                  # 92 tests
 ├── frontend/                   # React + Vite chat UI
 ├── ARCHITECTURE.md             # Detailed architecture docs
+├── SECURITY.md                 # Security model and roadmap
+├── MCP_CLIENTS.md              # How to connect MCP clients
+├── CALENDAR_SETUP.md           # Google + Outlook setup guide
 └── CLAUDE.md                   # Claude Code instructions
 ```
 

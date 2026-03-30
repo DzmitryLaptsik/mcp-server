@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-**MCP Personal Assistant Server** is a Python-based [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server built with [FastMCP](https://github.com/modelcontextprotocol/python-sdk). It exposes 19 AI-callable tools over a streamable HTTP transport, covering weather, notes, tasks, time tracking, reminders, news, calendar integration, and smart assistant capabilities. A React chat frontend with multi-model LLM support is included.
+**MCP Personal Assistant Server** is a Python-based [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server built with [FastMCP](https://github.com/modelcontextprotocol/python-sdk). It exposes 22 AI-callable tools over a streamable HTTP transport, covering weather, notes, tasks, time tracking, reminders, news, calendar integration, and smart assistant capabilities. A React chat frontend with multi-model LLM support is included.
 
 - **Language**: Python 3.11+
 - **Package manager**: [UV](https://docs.astral.sh/uv/)
@@ -71,6 +71,7 @@
 app/
 ├── main.py                         # MCP server entry point
 ├── chat_api.py                     # Chat API — LLM + tool execution + metadata
+├── auth.py                         # User auth (hashed API keys, per-user data)
 ├── tools/
 │   ├── __init__.py                 # FastMCP instance + auto-discovery
 │   ├── temperature.py              # Simple: Celsius ↔ Fahrenheit
@@ -312,7 +313,7 @@ Vite dev server proxies `/api` to the chat API backend (port 8001).
 
 ## 9. Testing Architecture
 
-90 tests across 14 test files:
+92 tests across 14 test files:
 
 ```
 tests/

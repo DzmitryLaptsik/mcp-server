@@ -75,7 +75,7 @@ The system has two access paths with different security characteristics:
 ### Authentication Model (Demo-Grade)
 - **Identity is name-based**: entering a name creates or returns an account. No password required.
 - **Deterministic user IDs**: same name always maps to the same user (case-insensitive)
-- **API keys stored in plaintext** in SQLite
+- **API keys hashed at rest** (SHA-256) — raw key only visible on login, never stored
 - **No session expiry**: API keys are valid indefinitely
 
 **Why this is acceptable for the demo**: The system runs locally, behind `127.0.0.1`. Name-based login eliminates signup friction for live demos. The API key provides per-session isolation, not account security.
@@ -95,8 +95,9 @@ The system has two access paths with different security characteristics:
 ## Hardening Roadmap
 
 ### Phase 1: Immediate (pre-production)
-- [ ] Hash API keys at rest (store `sha256(key)`, compare on lookup)
-- [ ] Add API key expiry (e.g., 30 days, refresh on login)
+- [x] Hash API keys at rest (store `sha256(key)`, compare on lookup) — **done**
+- [x] Re-login invalidates old key and generates new one — **done**
+- [ ] Add API key expiry (e.g., 30 days, auto-expire)
 - [ ] Add rate limiting on `/api/chat` (e.g., 60 requests/min per user)
 - [ ] Add rate limiting on external API calls (OpenWeather, NewsAPI)
 

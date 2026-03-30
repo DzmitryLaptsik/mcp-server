@@ -72,9 +72,9 @@ npm run dev          # Runs on http://localhost:3000
 |----------|------|------|
 | Weather | `get_weather`, `get_forecast`, `convert_temperature` | API / sync |
 | Time | `get_world_time`, `convert_timezone` | sync (stdlib) |
-| Notes | `create_note`, `search_notes` | SQLite |
+| Notes | `create_note`, `search_notes`, `list_notes` | SQLite |
 | Tasks | `create_task`, `list_tasks` | SQLite |
-| Productivity | `track_time`, `get_time_summary`, `set_reminder`, `list_reminders` | SQLite |
+| Productivity | `track_time`, `list_active_timers`, `list_time_entries`, `get_time_summary`, `set_reminder`, `list_reminders` | SQLite |
 | Information | `get_news` | API |
 | Calendar | `create_calendar_event`, `list_calendar_events`, `find_free_slots` | Google/Outlook API |
 | Smart Assistant | `summarize_day`, `plan_meeting` | Chains other tools |
@@ -91,6 +91,6 @@ npm run dev          # Runs on http://localhost:3000
 
 Tests use `pytest-asyncio` (auto mode) and `pytest-mock`. `conftest.py` provides fixtures that mock the `settings` object and `httpx.AsyncClient` so tests don't make real HTTP calls. Test deps are in the `[dependency-groups] dev` section of `pyproject.toml`.
 
-63 tests covering all tools. Run with `uv run pytest` from `app/`.
+92 tests covering all tools, auth, and chat API. Run with `uv run pytest` from `app/`.
 
 See `ARCHITECTURE.md` for detailed architecture documentation including data flows and design decisions.

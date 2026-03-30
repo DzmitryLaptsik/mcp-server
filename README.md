@@ -141,14 +141,14 @@ mcp-server/
 
 ```bash
 cd app
-uv run pytest        # 63 tests, all tools covered
+uv run pytest        # 92 tests, all tools covered
 uv run pytest -v     # Verbose output
 ```
 
 ## Tech Stack
 
 - **Backend**: Python 3.11+, FastMCP, Starlette, aiosqlite, httpx
-- **Frontend**: React, Vite
+- **Frontend**: React, Vite, react-markdown
 - **LLM**: OpenRouter (Claude, GPT, Gemini, Llama, DeepSeek)
 - **APIs**: OpenWeatherMap, NewsAPI, Google Calendar, Microsoft Graph
 - **Testing**: pytest, pytest-asyncio, pytest-mock

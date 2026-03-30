@@ -100,13 +100,13 @@ This project has two servers that serve different purposes:
 
 ## Available Tools
 
-When a client connects, it gets access to all 19 tools:
+When a client connects, it gets access to 19 tools (+ 3 calendar when configured):
 
 **Weather**: `get_weather`, `get_forecast`, `convert_temperature`
 **Time**: `get_world_time`, `convert_timezone`
-**Notes**: `create_note`, `search_notes`
+**Notes**: `create_note`, `search_notes`, `list_notes`
 **Tasks**: `create_task`, `list_tasks`
-**Productivity**: `track_time`, `get_time_summary`, `set_reminder`, `list_reminders`
+**Productivity**: `track_time`, `list_active_timers`, `list_time_entries`, `get_time_summary`, `set_reminder`, `list_reminders`
 **Information**: `get_news`
 **Calendar**: `create_calendar_event`, `list_calendar_events`, `find_free_slots` *(only if CALENDAR_PROVIDER is configured)*
 **Smart Assistant**: `summarize_day`, `plan_meeting`

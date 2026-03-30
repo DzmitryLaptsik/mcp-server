@@ -128,14 +128,14 @@ app/
 │   ├── test_forecast.py            # 4 tests
 │   ├── test_notes.py               # 6 tests
 │   ├── test_tasks.py               # 6 tests
-│   ├── test_timetracker.py         # 5 tests
+│   ├── test_timetracker.py         # 6 tests
 │   ├── test_reminders.py           # 6 tests
 │   ├── test_news.py                # 3 tests
 │   ├── test_calendar_google.py     # 4 tests
 │   ├── test_calendar_outlook.py    # 4 tests
 │   ├── test_assistant.py           # 9 tests
-│   ├── test_auth.py               # 13 tests
-│   └── test_chat_api.py           # 12 tests — 90 total
+│   ├── test_auth.py               # 16 tests
+│   └── test_chat_api.py           # 12 tests — 92 total
 ├── pyproject.toml
 ├── Dockerfile
 ├── docker-compose.yaml
@@ -208,6 +208,7 @@ tools/my_tool/
 
 - `create_note` — save text with optional tags to SQLite
 - `search_notes` — keyword search with optional tag filter
+- `list_notes` — list all notes, most recent first, optional tag filter
 
 ### 5.4 Tasks (`tools/tasks/`)
 
@@ -217,7 +218,9 @@ tools/my_tool/
 ### 5.5 Time Tracking (`tools/timetracker/`)
 
 - `track_time` — start/stop timer on a project, logs duration
-- `get_time_summary` — per-project time breakdown for a date range
+- `list_active_timers` — show currently running timers
+- `list_time_entries` — show individual session history with start/stop times
+- `get_time_summary` — aggregated per-project time breakdown for a date range
 
 ### 5.6 Reminders (`tools/reminders/`)
 
@@ -252,7 +255,9 @@ Chaining tools that combine multiple services:
 The chat API bridges the React frontend with LLM providers via OpenRouter:
 
 **Endpoints**:
-- `POST /api/chat` — send messages, get response with tool calls
+- `POST /api/auth/login` — register/login by name, returns API key
+- `GET /api/auth/me` — verify API key, returns user info
+- `POST /api/chat` — send messages, get response with tool calls (requires auth)
 - `GET /api/tools` — list tools with metadata (label, icon, category, template)
 - `GET /api/health` — health check
 
@@ -317,19 +322,21 @@ Vite dev server proxies `/api` to the chat API backend (port 8001).
 
 ```
 tests/
-├── conftest.py                # Patches settings + httpx.AsyncClient
-├── test_temperature.py        # Pure unit tests
-├── test_timezone.py           # Stdlib-only, no mocks needed
-├── test_weather.py            # Mocked httpx for OpenWeather API
-├── test_forecast.py           # Mocked httpx for forecast API
-├── test_notes.py              # tmp_path SQLite DB per test
-├── test_tasks.py              # tmp_path SQLite DB per test
-├── test_timetracker.py        # tmp_path SQLite DB per test
-├── test_reminders.py          # tmp_path SQLite DB per test
-├── test_news.py               # Mocked httpx for NewsAPI
-├── test_calendar_google.py    # Mocked Google API service
-├── test_calendar_outlook.py   # Mocked httpx for MS Graph
-└── test_assistant.py          # Mocked sub-services for chaining tests
+├── conftest.py                # Shared fixtures (mock settings, httpx)
+├── test_temperature.py        #  4 tests — pure unit tests
+├── test_timezone.py           #  6 tests — stdlib, no mocks
+├── test_weather.py            #  6 tests — mocked httpx for OpenWeather
+├── test_forecast.py           #  4 tests — mocked httpx for forecast
+├── test_notes.py              #  6 tests — tmp_path SQLite DB
+├── test_tasks.py              #  6 tests — tmp_path SQLite DB
+├── test_timetracker.py        #  6 tests — tmp_path SQLite DB
+├── test_reminders.py          #  6 tests — tmp_path SQLite DB
+├── test_news.py               #  3 tests — mocked httpx for NewsAPI
+├── test_calendar_google.py    #  4 tests — mocked Google API service
+├── test_calendar_outlook.py   #  4 tests — mocked httpx for MS Graph
+├── test_assistant.py          #  9 tests — mocked sub-services
+├── test_auth.py               # 16 tests — auth, login, API key hashing
+└── test_chat_api.py           # 12 tests — endpoints, auth, tool parity
 ```
 
 **Patterns**:

@@ -6,7 +6,7 @@ ADD . /app
 
 WORKDIR /app
 
-RUN uv sync --locked
+RUN uv sync --no-dev
 
 EXPOSE 8000
 

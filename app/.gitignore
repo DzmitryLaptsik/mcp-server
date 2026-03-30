@@ -11,3 +11,10 @@ wheels/
 
 .env
 .idea/
+
+# OAuth tokens
+google_token.json
+ms_token_cache.json
+
+# SQLite databases
+*.db

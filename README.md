@@ -1,6 +1,6 @@
 # MCP Personal Assistant Server
 
-A full-featured [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server with 22 AI-callable tools and a React chat frontend. Built with FastMCP, Python, and OpenRouter for multi-model LLM support.
+A full-featured [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server with 19+ AI-callable tools and a React chat frontend. Built with FastMCP, Python, and OpenRouter for multi-model LLM support.
 
 ## Features
 
@@ -106,7 +106,7 @@ mcp-server/
 │   ├── main.py                 # MCP server entry point
 │   ├── chat_api.py             # Chat API (LLM + tools + metadata)
 │   ├── auth.py                 # User auth (hashed API keys, per-user data)
-│   ├── tools/                  # 22 auto-discovered tools
+│   ├── tools/                  # 19 tools (+ 3 calendar when configured)
 │   │   ├── temperature.py      # Simple tool (single file)
 │   │   ├── timezone.py         # Simple tool (single file)
 │   │   ├── weather/            # Complex tool (sub-package)

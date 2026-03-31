@@ -4,14 +4,14 @@ A full-featured [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Features
 
-**19 tools across 8 categories:**
+**21 tools across 8 categories (+ 3 calendar when configured):**
 
 | Category | Tools |
 |----------|-------|
 | Weather | Current weather, 5-day forecast, temperature conversion |
 | Time | World clock, timezone converter |
 | Notes | Create, list, and search notes with tags |
-| Tasks | Task management with priority, project, and due dates |
+| Tasks | Create, update, delete, list tasks with priority and due dates |
 | Productivity | Time tracking (start/stop, history, active timers, summaries), reminders |
 | Information | News search |
 | Calendar | Google Calendar + Outlook integration (create, list, find free slots) |
@@ -106,7 +106,7 @@ mcp-server/
 │   ├── main.py                 # MCP server entry point
 │   ├── chat_api.py             # Chat API (LLM + tools + metadata)
 │   ├── auth.py                 # User auth (hashed API keys, per-user data)
-│   ├── tools/                  # 19 tools (+ 3 calendar when configured)
+│   ├── tools/                  # 21 tools (+ 3 calendar when configured)
 │   │   ├── temperature.py      # Simple tool (single file)
 │   │   ├── timezone.py         # Simple tool (single file)
 │   │   ├── weather/            # Complex tool (sub-package)
@@ -120,7 +120,7 @@ mcp-server/
 │   │   ├── resources.py        # MCP Resources (read-only context)
 │   │   └── prompts.py          # MCP Prompts (workflow templates)
 │   ├── utils/dotenv_config.py  # Settings (pydantic-settings)
-│   └── tests/                  # 92 tests
+│   └── tests/                  # 101 tests
 ├── frontend/                   # React + Vite chat UI
 ├── ARCHITECTURE.md             # Detailed architecture docs
 ├── SECURITY.md                 # Security model and roadmap
@@ -141,7 +141,7 @@ mcp-server/
 
 ```bash
 cd app
-uv run pytest        # 92 tests, all tools covered
+uv run pytest        # 101 tests, all tools covered
 uv run pytest -v     # Verbose output
 ```
 

@@ -12,7 +12,7 @@ Total time: ~3 minutes (20 seconds per slide average)
 
 ## Slide 2: What is MCP Assistant? (25 sec)
 
-> "MCP is an open protocol that lets AI models call external tools. Our server implements 19 tools across 7 domains — weather, notes, tasks, time tracking, reminders, news, and calendar."
+> "MCP is an open protocol that lets AI models call external tools. Our server implements 21 tools across 8 domains — weather, notes, tasks, time tracking, reminders, news, and calendar."
 
 > "The system has two access paths. The MCP server on port 8000 works with any MCP client — Claude Desktop, Cursor, any IDE. The Chat API on port 8001 adds multi-user auth and powers our React frontend. Both paths use the same tool services."
 
@@ -50,7 +50,7 @@ Total time: ~3 minutes (20 seconds per slide average)
 
 ## Slide 7: Tech Stack (20 sec)
 
-> "Quick numbers: 19+ tools, 8 LLM models via OpenRouter, 101 tests, 7 tool domains. Backend is Python with FastMCP and Starlette. Frontend is React 19 with Vite. Storage is aiosqlite with WAL mode for concurrent access. All tests run in under 2 seconds."
+> "Quick numbers: 21 tools, 8 LLM models via OpenRouter, 101 tests, 8 tool domains. Backend is Python with FastMCP and Starlette. Frontend is React 19 with Vite. Storage is aiosqlite with WAL mode for concurrent access. All tests run in under 2 seconds."
 
 ---
 

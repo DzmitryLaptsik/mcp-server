@@ -126,16 +126,16 @@ app/
 │   ├── test_timezone.py            # 6 tests
 │   ├── test_weather.py             # 6 tests
 │   ├── test_forecast.py            # 4 tests
-│   ├── test_notes.py               # 6 tests
+│   ├── test_notes.py               # 9 tests
 │   ├── test_tasks.py               # 6 tests
-│   ├── test_timetracker.py         # 6 tests
+│   ├── test_timetracker.py         # 11 tests
 │   ├── test_reminders.py           # 6 tests
 │   ├── test_news.py                # 3 tests
 │   ├── test_calendar_google.py     # 4 tests
 │   ├── test_calendar_outlook.py    # 4 tests
 │   ├── test_assistant.py           # 9 tests
 │   ├── test_auth.py               # 16 tests
-│   └── test_chat_api.py           # 12 tests — 92 total
+│   └── test_chat_api.py           # 13 tests — 101 total
 ├── pyproject.toml
 ├── Dockerfile
 ├── docker-compose.yaml
@@ -213,6 +213,8 @@ tools/my_tool/
 ### 5.4 Tasks (`tools/tasks/`)
 
 - `create_task` — title, description, priority, project, due date
+- `update_task` — change status (done/in_progress), priority, title, due date
+- `delete_task` — remove a task by ID
 - `list_tasks` — filter by status, priority, project, or overdue
 
 ### 5.5 Time Tracking (`tools/timetracker/`)
@@ -318,7 +320,7 @@ Vite dev server proxies `/api` to the chat API backend (port 8001).
 
 ## 9. Testing Architecture
 
-92 tests across 14 test files:
+101 tests across 14 test files:
 
 ```
 tests/
@@ -327,16 +329,16 @@ tests/
 ├── test_timezone.py           #  6 tests — stdlib, no mocks
 ├── test_weather.py            #  6 tests — mocked httpx for OpenWeather
 ├── test_forecast.py           #  4 tests — mocked httpx for forecast
-├── test_notes.py              #  6 tests — tmp_path SQLite DB
+├── test_notes.py              #  9 tests — tmp_path SQLite DB
 ├── test_tasks.py              #  6 tests — tmp_path SQLite DB
-├── test_timetracker.py        #  6 tests — tmp_path SQLite DB
+├── test_timetracker.py        # 11 tests — tmp_path SQLite DB
 ├── test_reminders.py          #  6 tests — tmp_path SQLite DB
 ├── test_news.py               #  3 tests — mocked httpx for NewsAPI
 ├── test_calendar_google.py    #  4 tests — mocked Google API service
 ├── test_calendar_outlook.py   #  4 tests — mocked httpx for MS Graph
 ├── test_assistant.py          #  9 tests — mocked sub-services
 ├── test_auth.py               # 16 tests — auth, login, API key hashing
-└── test_chat_api.py           # 12 tests — endpoints, auth, tool parity
+└── test_chat_api.py           # 13 tests — endpoints, auth, tool parity
 ```
 
 **Patterns**:

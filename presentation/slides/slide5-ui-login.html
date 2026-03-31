@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #0D1117; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  background: #0D1117; font-family: Arial, sans-serif;
+  display: flex; flex-direction: column;
+}
+.accent-bar { position: absolute; top: 0; left: 0; width: 100%; height: 4pt; background: #5EA8A7; }
+.header { margin: 24pt 40pt 0 40pt; }
+h1 { color: #FFFFFF; font-size: 28pt; margin: 0 0 4pt 0; }
+.underline { width: 60pt; height: 3pt; background: #5EA8A7; margin-bottom: 12pt; }
+.content { display: flex; margin: 0 40pt; gap: 24pt; flex: 1; }
+.screenshot-area {
+  flex: 1; background: #161B22; border: 1pt solid #30363D;
+  border-radius: 8pt; overflow: hidden;
+}
+.screenshot-area img { width: 100%; height: 100%; object-fit: cover; }
+.info-area { flex: 0.6; display: flex; flex-direction: column; gap: 12pt; }
+.info-title { color: #FFFFFF; font-size: 16pt; font-weight: bold; margin: 0 0 6pt 0; }
+.info-desc { color: #8B949E; font-size: 13pt; margin: 0; line-height: 1.4; }
+.badge {
+  background: #5EA8A7; border-radius: 12pt;
+  padding: 4pt 10pt; display: inline-block;
+}
+.badge-text { color: #FFFFFF; font-size: 11pt; font-weight: bold; margin: 0; }
+.page-num { color: #484F58; font-size: 9pt; position: absolute; bottom: 12pt; right: 40pt; }
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+<div class="header">
+  <h1>UI: Login & Welcome</h1>
+  <div class="underline"></div>
+</div>
+<div class="content">
+  <div class="screenshot-area">
+    <img src="../screenshots/02-welcome.png">
+  </div>
+  <div class="info-area">
+    <div>
+      <p class="info-title">Simple Login</p>
+      <p class="info-desc">Name-based auth with per-user data isolation. API key generated on first login.</p>
+    </div>
+    <div>
+      <p class="info-title">Welcome Screen</p>
+      <p class="info-desc">Personalized greeting with 6 template prompts covering weather, notes, tasks, time tracking, and reminders.</p>
+    </div>
+    <div>
+      <p class="info-title">Quick Actions</p>
+      <p class="info-desc">One-click suggestion chips let users instantly try common workflows without typing.</p>
+    </div>
+    <div>
+      <div class="badge"><p class="badge-text">Dark / Light Theme</p></div>
+    </div>
+  </div>
+</div>
+<p class="page-num">5</p>
+</body>
+</html>

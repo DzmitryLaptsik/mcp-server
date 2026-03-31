@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #0D1117; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  background: #0D1117; font-family: Arial, sans-serif;
+  display: flex; flex-direction: column;
+}
+.accent-bar { position: absolute; top: 0; left: 0; width: 100%; height: 4pt; background: #5EA8A7; }
+.header { margin: 16pt 40pt 0 40pt; }
+h1 { color: #FFFFFF; font-size: 24pt; margin: 0 0 3pt 0; }
+.underline { width: 60pt; height: 3pt; background: #5EA8A7; margin-bottom: 6pt; }
+.content { display: flex; margin: 0 36pt; gap: 12pt; flex: 1; }
+.col { flex: 1; display: flex; flex-direction: column; gap: 5pt; }
+.card {
+  background: #161B22; border: 1pt solid #30363D; border-radius: 6pt;
+  padding: 7pt 10pt;
+}
+.card-green { border-left: 3pt solid #3FB950; }
+.card-yellow { border-left: 3pt solid #E3B341; }
+.card-blue { border-left: 3pt solid #58A6FF; }
+.card-title { color: #FFFFFF; font-size: 10pt; font-weight: bold; margin: 0 0 2pt 0; }
+.card-item { color: #8B949E; font-size: 8pt; margin: 0 0 1pt 0; }
+.check { color: #3FB950; }
+.section-label { color: #5EA8A7; font-size: 8pt; text-transform: uppercase; font-weight: bold; letter-spacing: 1pt; margin: 2pt 0 1pt 0; }
+.page-num { color: #484F58; font-size: 9pt; position: absolute; bottom: 12pt; right: 40pt; }
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+<div class="header">
+  <h1>Security & OWASP</h1>
+  <div class="underline"></div>
+</div>
+<div class="content">
+  <div class="col">
+    <p class="section-label">Implemented Protections</p>
+    <div class="card card-green">
+      <p class="card-title">Authentication & Isolation</p>
+      <p class="card-item"><span class="check">&#10003;</span> Per-user SQLite databases (data/{user_id}/)</p>
+      <p class="card-item"><span class="check">&#10003;</span> API keys hashed at rest (SHA-256)</p>
+      <p class="card-item"><span class="check">&#10003;</span> Re-login invalidates old key</p>
+      <p class="card-item"><span class="check">&#10003;</span> Auth required on all endpoints</p>
+    </div>
+    <div class="card card-green">
+      <p class="card-title">Input & Query Safety</p>
+      <p class="card-item"><span class="check">&#10003;</span> Parameterized SQL everywhere (A03 Injection)</p>
+      <p class="card-item"><span class="check">&#10003;</span> Pydantic validation + max_length</p>
+      <p class="card-item"><span class="check">&#10003;</span> 512KB request size limit</p>
+      <p class="card-item"><span class="check">&#10003;</span> react-markdown sanitizes HTML (XSS)</p>
+    </div>
+    <div class="card card-green">
+      <p class="card-title">Network & Config</p>
+      <p class="card-item"><span class="check">&#10003;</span> Localhost-only binding (127.0.0.1)</p>
+      <p class="card-item"><span class="check">&#10003;</span> CORS restricted to localhost:3000</p>
+      <p class="card-item"><span class="check">&#10003;</span> Secrets in .env (gitignored)</p>
+      <p class="card-item"><span class="check">&#10003;</span> SQLite WAL mode + busy timeout</p>
+    </div>
+  </div>
+  <div class="col">
+    <p class="section-label">AI-Specific Safety</p>
+    <div class="card card-blue">
+      <p class="card-title">LLM Tool Guardrails</p>
+      <p class="card-item"><span class="check">&#10003;</span> READ/WRITE tool separation in system prompt</p>
+      <p class="card-item"><span class="check">&#10003;</span> Side-effect dedup (prevents duplicate writes)</p>
+      <p class="card-item"><span class="check">&#10003;</span> Tool loop capped at 5 rounds</p>
+      <p class="card-item"><span class="check">&#10003;</span> ToolAnnotations (readOnly/destructive hints)</p>
+    </div>
+    <p class="section-label">OWASP Top 10 Coverage</p>
+    <div class="card card-yellow">
+      <p class="card-title">Assessed & Documented</p>
+      <p class="card-item">A01 Broken Access Control — mitigated (per-user DB)</p>
+      <p class="card-item">A02 Crypto Failures — mitigated (hashed keys)</p>
+      <p class="card-item">A03 Injection — mitigated (parameterized SQL)</p>
+      <p class="card-item">A05 Misconfiguration — mitigated (localhost, CORS)</p>
+      <p class="card-item">A07 Auth Failures — known: name-based (demo)</p>
+    </div>
+    <p class="section-label">Hardening Roadmap</p>
+    <div class="card card-yellow">
+      <p class="card-title">Phase 1 → 2 → 3</p>
+      <p class="card-item">Rate limiting → OAuth login → MCP auth</p>
+      <p class="card-item">Key expiry → Audit logging → TLS/HTTPS</p>
+      <p class="card-item">Full roadmap in SECURITY.md</p>
+    </div>
+  </div>
+</div>
+<p class="page-num">8</p>
+</body>
+</html>

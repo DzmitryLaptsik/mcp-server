@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #0D1117; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  background: #0D1117; font-family: Arial, sans-serif;
+  display: flex; flex-direction: column;
+}
+.accent-bar { position: absolute; top: 0; left: 0; width: 100%; height: 4pt; background: #5EA8A7; }
+.header { margin: 18pt 40pt 0 40pt; }
+h1 { color: #FFFFFF; font-size: 28pt; margin: 0 0 3pt 0; }
+.underline { width: 60pt; height: 3pt; background: #5EA8A7; margin-bottom: 8pt; }
+.grid { display: flex; margin: 0 40pt; gap: 12pt; flex: 1; }
+.column { flex: 1; display: flex; flex-direction: column; gap: 8pt; }
+.stack-card {
+  background: #161B22; border: 1pt solid #30363D; border-radius: 8pt;
+  padding: 10pt 14pt;
+}
+.stack-label { color: #5EA8A7; font-size: 9pt; text-transform: uppercase; margin: 0 0 4pt 0; font-weight: bold; letter-spacing: 1pt; }
+.stack-item { color: #FFFFFF; font-size: 12pt; margin: 0 0 2pt 0; }
+.stack-detail { color: #8B949E; font-size: 10pt; margin: 0; }
+.stat-row { display: flex; gap: 10pt; margin: 0 40pt 10pt 40pt; }
+.stat-box {
+  flex: 1; background: #161B22; border: 1pt solid #30363D; border-radius: 8pt;
+  padding: 8pt; text-align: center;
+}
+.stat-num { color: #5EA8A7; font-size: 26pt; font-weight: bold; margin: 0; }
+.stat-label { color: #8B949E; font-size: 10pt; margin: 2pt 0 0 0; }
+.page-num { color: #484F58; font-size: 9pt; position: absolute; bottom: 12pt; right: 40pt; }
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+<div class="header">
+  <h1>Tech Stack</h1>
+  <div class="underline"></div>
+</div>
+<div class="stat-row">
+  <div class="stat-box">
+    <p class="stat-num">19+</p>
+    <p class="stat-label">AI Tools</p>
+  </div>
+  <div class="stat-box">
+    <p class="stat-num">8</p>
+    <p class="stat-label">LLM Models</p>
+  </div>
+  <div class="stat-box">
+    <p class="stat-num">101</p>
+    <p class="stat-label">Tests</p>
+  </div>
+  <div class="stat-box">
+    <p class="stat-num">7</p>
+    <p class="stat-label">Tool Domains</p>
+  </div>
+</div>
+<div class="grid">
+  <div class="column">
+    <div class="stack-card">
+      <p class="stack-label">Backend</p>
+      <p class="stack-item">Python 3.12+ / FastMCP</p>
+      <p class="stack-item">Starlette / Pydantic v2</p>
+      <p class="stack-item">aiosqlite / httpx</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-label">AI / LLM</p>
+      <p class="stack-item">OpenRouter (multi-model)</p>
+      <p class="stack-detail">Claude, GPT-4o, Gemini, Llama, DeepSeek</p>
+    </div>
+  </div>
+  <div class="column">
+    <div class="stack-card">
+      <p class="stack-label">Frontend</p>
+      <p class="stack-item">React 19 + Vite</p>
+      <p class="stack-item">react-markdown / CSS Variables</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-label">Testing</p>
+      <p class="stack-item">pytest-asyncio / pytest-mock</p>
+      <p class="stack-detail">101 tests across all tools, auth + Chat API</p>
+    </div>
+    <div class="stack-card">
+      <p class="stack-label">DevOps</p>
+      <p class="stack-item">Docker Compose / uv</p>
+      <p class="stack-detail">MCP Inspector for dev testing</p>
+    </div>
+  </div>
+</div>
+<p class="page-num">7</p>
+</body>
+</html>

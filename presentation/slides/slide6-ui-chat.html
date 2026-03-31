@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #0D1117; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  background: #0D1117; font-family: Arial, sans-serif;
+  display: flex; flex-direction: column;
+}
+.accent-bar { position: absolute; top: 0; left: 0; width: 100%; height: 4pt; background: #5EA8A7; }
+.header { margin: 24pt 40pt 0 40pt; }
+h1 { color: #FFFFFF; font-size: 28pt; margin: 0 0 4pt 0; }
+.underline { width: 60pt; height: 3pt; background: #5EA8A7; margin-bottom: 12pt; }
+.screenshots { display: flex; margin: 0 40pt; gap: 16pt; flex: 1; }
+.shot {
+  flex: 1; display: flex; flex-direction: column;
+  background: #161B22; border: 1pt solid #30363D;
+  border-radius: 8pt; overflow: hidden;
+}
+.shot img { width: 100%; object-fit: contain; background: #0D1117; }
+.shot-label {
+  background: #161B22; border-top: 1pt solid #30363D;
+  padding: 8pt 12pt;
+}
+.shot-title { color: #FFFFFF; font-size: 14pt; font-weight: bold; margin: 0; }
+.shot-desc { color: #8B949E; font-size: 11pt; margin: 3pt 0 0 0; }
+.page-num { color: #484F58; font-size: 9pt; position: absolute; bottom: 12pt; right: 40pt; }
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+<div class="header">
+  <h1>UI: Chat &amp; Tool Calls</h1>
+  <div class="underline"></div>
+</div>
+<div class="screenshots">
+  <div class="shot">
+    <img src="../screenshots/07-task-creation.png">
+    <div class="shot-label">
+      <p class="shot-title">Multi-Turn Chat with Tool Execution</p>
+      <p class="shot-desc">Weather query via get_weather, then task creation via create_task — both with tool call badges and formatted responses</p>
+    </div>
+  </div>
+  <div class="shot">
+    <img src="../screenshots/04-tools-panel.png">
+    <div class="shot-label">
+      <p class="shot-title">Connected Tools Panel</p>
+      <p class="shot-desc">20 tools organized by category (Weather, Time, Notes, Tasks, Productivity) with descriptions and icons</p>
+    </div>
+  </div>
+</div>
+<p class="page-num">6</p>
+</body>
+</html>

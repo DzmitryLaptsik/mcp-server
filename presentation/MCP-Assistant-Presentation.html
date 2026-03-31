@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP Assistant - Presentation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --border: #30363D;
+    --accent: #5EA8A7;
+    --accent2: #E3B341;
+    --accent3: #A371F7;
+    --text: #FFFFFF;
+    --text-muted: #8B949E;
+    --text-dim: #484F58;
+  }
+
+  html, body { height: 100%; overflow: hidden; background: var(--bg); }
+
+  body { font-family: 'Inter', Arial, sans-serif; color: var(--text); }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    padding: 48px 64px;
+    opacity: 0; transition: opacity 0.4s ease;
+  }
+  .slide.active { display: flex; opacity: 1; }
+
+  /* Navigation */
+  .nav {
+    position: fixed; bottom: 24px; right: 32px; z-index: 100;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .nav button {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 16px; border-radius: 8px;
+    cursor: pointer; font-size: 14px; transition: all 0.2s;
+  }
+  .nav button:hover { background: var(--accent); border-color: var(--accent); }
+  .nav .counter { color: var(--text-muted); font-size: 13px; margin: 0 8px; }
+
+  /* Progress bar */
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); transition: width 0.3s; z-index: 100; }
+
+  /* Common */
+  .accent-line { width: 60px; height: 3px; background: var(--accent); margin-bottom: 20px; }
+  h1 { font-size: 40px; font-weight: 800; margin-bottom: 4px; }
+  h2 { font-size: 26px; font-weight: 400; color: var(--text-muted); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px;
+  }
+
+  /* ========== SLIDE 1: TITLE ========== */
+  .slide-title {
+    align-items: center; justify-content: center; text-align: center;
+  }
+  .logo-circle {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; margin-bottom: 28px;
+    box-shadow: 0 0 40px rgba(94, 168, 167, 0.3);
+  }
+  .logo-circle span { font-size: 44px; font-weight: 800; }
+  .slide-title h1 { font-size: 62px; margin-bottom: 10px; }
+  .slide-title h2 { font-size: 30px; margin-bottom: 14px; }
+  .slide-title .tags { color: var(--accent); font-size: 19px; letter-spacing: 0.5px; }
+  .slide-title .footer-row {
+    position: absolute; bottom: 32px; left: 64px; right: 64px;
+    display: flex; justify-content: space-between; color: var(--text-dim); font-size: 15px;
+  }
+
+  /* ========== SLIDE 2: OVERVIEW ========== */
+  .overview-grid { display: flex; gap: 32px; flex: 1; margin-top: 16px; }
+  .overview-left { flex: 1.2; }
+  .overview-left p { color: #C9D1D9; font-size: 18px; line-height: 1.7; margin-bottom: 14px; }
+  .overview-right { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .feature-card { border-left: 3px solid var(--accent); }
+  .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .feature-card p { color: var(--text-muted); font-size: 15px; }
+
+  /* ========== SLIDE 3: TOOLS ========== */
+  .tools-grid {
+    display: flex; flex-wrap: wrap;
+    gap: 14px; margin-top: 16px;
+  }
+  .tool-group { padding: 16px 18px; width: calc(25% - 12px); }
+  .tool-group-title {
+    color: var(--accent); font-size: 13px; text-transform: uppercase;
+    font-weight: 700; letter-spacing: 1.5px; margin-bottom: 10px;
+  }
+  .tool-entry { margin-bottom: 8px; }
+  .tool-entry h4 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .tool-entry p { color: var(--text-muted); font-size: 13px; }
+
+  /* ========== SLIDE 4: ARCHITECTURE ========== */
+  .arch-grid { display: flex; gap: 28px; flex: 1; margin-top: 16px; }
+  .arch-col { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .arch-accent { border-left: 3px solid var(--accent); }
+  .arch-orange { border-left: 3px solid var(--accent2); }
+  .arch-purple { border-left: 3px solid var(--accent3); }
+  .arch-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .arch-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 2px; }
+  .arch-dark { background: #1A2233; }
+  .arrow-down { text-align: center; color: var(--accent); font-size: 22px; line-height: 1; }
+
+  /* ========== SLIDE 5 & 6: UI ========== */
+  .ui-grid { display: flex; gap: 28px; flex: 1; margin-top: 16px; }
+  .screenshot {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .screenshot img {
+    width: 100%; height: 100%; object-fit: cover; object-position: top;
+  }
+  .ui-info { flex: 0.5; display: flex; flex-direction: column; gap: 16px; }
+  .ui-info h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .ui-info p { color: var(--text-muted); font-size: 15px; line-height: 1.5; }
+  .badge {
+    display: inline-block; background: var(--accent); padding: 6px 14px;
+    border-radius: 20px; font-size: 14px; font-weight: 600;
+  }
+
+  .screenshots-row { display: flex; gap: 20px; flex: 1; margin-top: 16px; }
+  .shot-container {
+    flex: 1; display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .shot-container img { width: 100%; object-fit: contain; background: var(--bg); }
+  .shot-label {
+    padding: 12px 16px; border-top: 1px solid var(--border);
+  }
+  .shot-label h4 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .shot-label p { color: var(--text-muted); font-size: 14px; }
+
+  /* ========== SLIDE 7: TECH STACK ========== */
+  .stats-row { display: flex; gap: 16px; margin: 16px 0; }
+  .stat-box {
+    flex: 1; text-align: center; padding: 16px;
+  }
+  .stat-box .num { font-size: 42px; font-weight: 800; color: var(--accent); }
+  .stat-box .label { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+  .stack-grid { display: flex; gap: 20px; flex: 1; }
+  .stack-col { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .stack-card .cat {
+    color: var(--accent); font-size: 13px; text-transform: uppercase;
+    font-weight: 700; letter-spacing: 1.5px; margin-bottom: 8px;
+  }
+  .stack-card h3 { font-size: 17px; margin-bottom: 2px; }
+  .stack-card p { color: var(--text-muted); font-size: 14px; }
+
+  /* ========== SLIDE 8: THANK YOU ========== */
+  .slide-thanks {
+    align-items: center; justify-content: center; text-align: center;
+  }
+  .slide-thanks h1 { font-size: 68px; margin-bottom: 10px; }
+  .slide-thanks h2 { font-size: 30px; margin-bottom: 40px; }
+  .links-row { display: flex; gap: 24px; }
+  .link-card {
+    min-width: 150px; text-align: center;
+  }
+  .link-card .lbl {
+    color: var(--accent); font-size: 15px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+  }
+  .link-card .val { font-size: 20px; font-weight: 600; }
+  .slide-thanks .tagline {
+    color: var(--text-dim); font-size: 16px; margin-top: 36px;
+  }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .slide.active > * { animation: fadeUp 0.5s ease forwards; }
+  .slide.active > *:nth-child(2) { animation-delay: 0.08s; }
+  .slide.active > *:nth-child(3) { animation-delay: 0.16s; }
+  .slide.active > *:nth-child(4) { animation-delay: 0.24s; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide slide-title active" data-slide="0">
+  <div class="logo-circle"><span>MCP</span></div>
+  <h1>MCP Assistant</h1>
+  <h2>Personal Productivity Server</h2>
+  <div class="tags">19+ AI-Callable Tools &nbsp;|&nbsp; Multi-Model Chat &nbsp;|&nbsp; Per-User Isolation &nbsp;|&nbsp; React Frontend</div>
+  <div class="footer-row">
+    <span>Hackathon Project 2026</span>
+    <span>Built with FastMCP + Python + React</span>
+  </div>
+</div>
+
+<!-- SLIDE 2: OVERVIEW -->
+<div class="slide" data-slide="1">
+  <h1>What is MCP Assistant?</h1>
+  <div class="accent-line"></div>
+  <div class="overview-grid">
+    <div class="overview-left">
+      <p>A personal productivity platform that exposes <strong>19+ AI-callable tools</strong> through the Model Context Protocol (MCP).</p>
+      <p>Users interact via a <strong>React chat interface</strong> backed by OpenRouter for multi-model LLM support. The assistant can check weather, manage notes and tasks, track time, set reminders, read news, and manage calendar events.</p>
+      <p>Two access paths: a local MCP server for IDE clients, and a multi-user Chat API for the web frontend.</p>
+    </div>
+    <div class="overview-right">
+      <div class="card feature-card">
+        <h3>MCP Server (port 8000)</h3>
+        <p>Single-user, local IDE clients like Claude Desktop or Cursor</p>
+      </div>
+      <div class="card feature-card">
+        <h3>Chat API (port 8001)</h3>
+        <p>Multi-user, per-user data isolation, React frontend</p>
+      </div>
+      <div class="card feature-card">
+        <h3>React Frontend (port 3000)</h3>
+        <p>Modern chat UI with model switching and tools panel</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: TOOLS -->
+<div class="slide" data-slide="2">
+  <h1>19+ AI-Callable Tools</h1>
+  <div class="accent-line"></div>
+  <div class="tools-grid">
+    <div class="card tool-group">
+      <div class="tool-group-title">Weather</div>
+      <div class="tool-entry"><h4>get_weather</h4><p>Current weather by city or coords</p></div>
+      <div class="tool-entry"><h4>get_forecast</h4><p>Multi-day forecast (1-5 days)</p></div>
+      <div class="tool-entry"><h4>convert_temperature</h4><p>Celsius / Fahrenheit conversion</p></div>
+    </div>
+    <div class="card tool-group">
+      <div class="tool-group-title">Time</div>
+      <div class="tool-entry"><h4>get_world_time</h4><p>Current time in any timezone</p></div>
+      <div class="tool-entry"><h4>convert_timezone</h4><p>Convert between timezones</p></div>
+    </div>
+    <div class="card tool-group">
+      <div class="tool-group-title">Notes</div>
+      <div class="tool-entry"><h4>create_note</h4><p>Save persistent notes (SQLite)</p></div>
+      <div class="tool-entry"><h4>search_notes</h4><p>Full-text search across notes</p></div>
+    </div>
+    <div class="card tool-group">
+      <div class="tool-group-title">Tasks</div>
+      <div class="tool-entry"><h4>create_task</h4><p>Create with priority and due date</p></div>
+      <div class="tool-entry"><h4>list_tasks</h4><p>Filter by status and priority</p></div>
+    </div>
+    <div class="card tool-group">
+      <div class="tool-group-title">Productivity</div>
+      <div class="tool-entry"><h4>track_time</h4><p>Start/stop project time tracking</p></div>
+      <div class="tool-entry"><h4>get_time_summary</h4><p>Daily/weekly time reports</p></div>
+      <div class="tool-entry"><h4>set_reminder</h4><p>Schedule time-based alerts</p></div>
+      <div class="tool-entry"><h4>list_reminders</h4><p>View active reminders</p></div>
+    </div>
+    <div class="card tool-group">
+      <div class="tool-group-title">Information</div>
+      <div class="tool-entry"><h4>get_news</h4><p>Latest headlines by topic</p></div>
+    </div>
+    <div class="card tool-group">
+      <div class="tool-group-title">Smart Assistant</div>
+      <div class="tool-entry"><h4>summarize_day</h4><p>Combined daily briefing</p></div>
+      <div class="tool-entry"><h4>plan_meeting</h4><p>Find slots across timezones</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: ARCHITECTURE -->
+<div class="slide" data-slide="3">
+  <h1>Architecture</h1>
+  <div class="accent-line"></div>
+  <div class="arch-grid">
+    <div class="arch-col">
+      <div class="card arch-card arch-accent">
+        <h3>React Frontend</h3>
+        <p>Port 3000 | Vite + React</p>
+        <p>Chat UI, model selector, tools panel</p>
+      </div>
+      <div class="arrow-down">&darr;</div>
+      <div class="card arch-card arch-orange">
+        <h3>Chat API (Starlette)</h3>
+        <p>Port 8001 | Multi-user auth</p>
+        <p>OpenRouter LLM | Per-user DB isolation</p>
+      </div>
+      <div class="arrow-down">&darr;</div>
+      <div class="card arch-card arch-purple">
+        <h3>MCP Server (FastMCP)</h3>
+        <p>Port 8000 | Streamable HTTP</p>
+        <p>19+ auto-discovered tools</p>
+      </div>
+    </div>
+    <div class="arch-col">
+      <div class="card arch-card arch-dark">
+        <h3>Tool Auto-Discovery</h3>
+        <p>@mcp.tool() decorator + pkgutil import</p>
+        <p>Add a file = tool is live. No registration.</p>
+      </div>
+      <div class="card arch-card arch-dark">
+        <h3>Data Tenancy</h3>
+        <p>MCP path: global shared DB</p>
+        <p>Chat API path: data/{user_id}/ isolation</p>
+      </div>
+      <div class="card arch-card arch-dark">
+        <h3>LLM Integration</h3>
+        <p>OpenRouter multi-model switching</p>
+        <p>Claude, GPT-4o, Gemini, Llama, DeepSeek</p>
+      </div>
+      <div class="card arch-card arch-dark">
+        <h3>Storage</h3>
+        <p>aiosqlite per domain (notes, tasks, etc.)</p>
+        <p>Pydantic-Settings for config (.env)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: UI LOGIN & WELCOME -->
+<div class="slide" data-slide="4">
+  <h1>UI: Login &amp; Welcome</h1>
+  <div class="accent-line"></div>
+  <div class="ui-grid">
+    <div class="screenshot">
+      <img src="screenshots/02-welcome.png" alt="Welcome screen">
+    </div>
+    <div class="ui-info">
+      <div><h3>Simple Login</h3><p>Name-based auth with per-user data isolation. API key generated on first login.</p></div>
+      <div><h3>Welcome Screen</h3><p>Personalized greeting with 6 template prompts covering weather, notes, tasks, time tracking, and reminders.</p></div>
+      <div><h3>Quick Actions</h3><p>One-click suggestion chips let users instantly try common workflows without typing.</p></div>
+      <div><span class="badge">Dark / Light Theme</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: UI CHAT & TOOLS -->
+<div class="slide" data-slide="5">
+  <h1>UI: Chat &amp; Tool Calls</h1>
+  <div class="accent-line"></div>
+  <div class="screenshots-row">
+    <div class="shot-container">
+      <img src="screenshots/07-task-creation.png" alt="Multi-turn chat">
+      <div class="shot-label"><h4>Multi-Turn Chat with Tool Execution</h4><p>Weather query via get_weather, then task creation via create_task — both with tool badges and formatted responses</p></div>
+    </div>
+    <div class="shot-container">
+      <img src="screenshots/04-tools-panel.png" alt="Tools panel">
+      <div class="shot-label"><h4>Connected Tools Panel</h4><p>20 tools organized by category (Weather, Time, Notes, Tasks, Productivity) with descriptions and icons</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: TECH STACK -->
+<div class="slide" data-slide="6">
+  <h1>Tech Stack</h1>
+  <div class="accent-line"></div>
+  <div class="stats-row">
+    <div class="card stat-box"><div class="num">19+</div><div class="label">AI Tools</div></div>
+    <div class="card stat-box"><div class="num">8</div><div class="label">LLM Models</div></div>
+    <div class="card stat-box"><div class="num">101</div><div class="label">Tests</div></div>
+    <div class="card stat-box"><div class="num">7</div><div class="label">Tool Domains</div></div>
+  </div>
+  <div class="stack-grid">
+    <div class="stack-col">
+      <div class="card stack-card"><div class="cat">Backend</div><h3>Python 3.12+ / FastMCP</h3><h3>Starlette / Pydantic v2</h3><p>aiosqlite / httpx</p></div>
+      <div class="card stack-card"><div class="cat">AI / LLM</div><h3>OpenRouter (multi-model)</h3><p>Claude, GPT-4o, Gemini, Llama, DeepSeek</p></div>
+    </div>
+    <div class="stack-col">
+      <div class="card stack-card"><div class="cat">Frontend</div><h3>React 19 + Vite</h3><p>react-markdown / CSS Variables</p></div>
+      <div class="card stack-card"><div class="cat">Testing</div><h3>pytest-asyncio / pytest-mock</h3><p>101 tests across all tools, auth + Chat API</p></div>
+      <div class="card stack-card"><div class="cat">DevOps</div><h3>Docker Compose / uv</h3><p>MCP Inspector for dev testing</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: SECURITY -->
+<div class="slide" data-slide="7">
+  <h1>Security &amp; OWASP</h1>
+  <div class="accent-line"></div>
+  <div style="display: flex; gap: 24px; flex: 1; margin-top: 12px;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div style="color: var(--accent); font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px;">Implemented Protections</div>
+      <div class="card" style="border-left: 3px solid #3FB950; padding: 14px 16px;">
+        <h3 style="font-size: 16px; margin-bottom: 6px;">Authentication &amp; Isolation</h3>
+        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;"><span style="color: #3FB950;">&#10003;</span> Per-user SQLite databases (data/{user_id}/)<br><span style="color: #3FB950;">&#10003;</span> API keys hashed at rest (SHA-256)<br><span style="color: #3FB950;">&#10003;</span> Re-login invalidates old key<br><span style="color: #3FB950;">&#10003;</span> Auth required on all endpoints</p>
+      </div>
+      <div class="card" style="border-left: 3px solid #3FB950; padding: 14px 16px;">
+        <h3 style="font-size: 16px; margin-bottom: 6px;">Input &amp; Query Safety</h3>
+        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;"><span style="color: #3FB950;">&#10003;</span> Parameterized SQL everywhere<br><span style="color: #3FB950;">&#10003;</span> Pydantic validation + max_length<br><span style="color: #3FB950;">&#10003;</span> react-markdown sanitizes HTML (XSS)<br><span style="color: #3FB950;">&#10003;</span> Localhost-only, CORS restricted</p>
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div style="color: var(--accent); font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px;">AI-Specific Safety</div>
+      <div class="card" style="border-left: 3px solid #58A6FF; padding: 14px 16px;">
+        <h3 style="font-size: 16px; margin-bottom: 6px;">LLM Tool Guardrails</h3>
+        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;"><span style="color: #3FB950;">&#10003;</span> READ/WRITE tool separation in system prompt<br><span style="color: #3FB950;">&#10003;</span> Side-effect dedup (prevents duplicate writes)<br><span style="color: #3FB950;">&#10003;</span> Tool loop capped at 5 rounds<br><span style="color: #3FB950;">&#10003;</span> ToolAnnotations (readOnly/destructive hints)</p>
+      </div>
+      <div style="color: var(--accent); font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px; margin-top: 4px;">OWASP Top 10</div>
+      <div class="card" style="border-left: 3px solid var(--accent2); padding: 14px 16px;">
+        <h3 style="font-size: 16px; margin-bottom: 6px;">Assessed &amp; Documented</h3>
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">A01 Access Control &#8212; per-user DB isolation<br>A02 Crypto &#8212; hashed API keys<br>A03 Injection &#8212; parameterized SQL<br>A07 Auth &#8212; known: name-based (demo-grade)<br>Full OWASP table + 3-phase roadmap in SECURITY.md</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: THANK YOU -->
+<div class="slide slide-thanks" data-slide="8">
+  <h1>Thank You!</h1>
+  <h2>Questions &amp; Demo</h2>
+  <div class="links-row">
+    <div class="card link-card"><div class="lbl">MCP Server</div><div class="val">localhost:8000</div></div>
+    <div class="card link-card"><div class="lbl">Chat API</div><div class="val">localhost:8001</div></div>
+    <div class="card link-card"><div class="lbl">Frontend</div><div class="val">localhost:3000</div></div>
+  </div>
+  <div class="tagline">Built with FastMCP + Python + React &nbsp;|&nbsp; Hackathon 2026</div>
+</div>
+
+<!-- NAVIGATION -->
+<div class="nav">
+  <button id="prevBtn" onclick="navigate(-1)">&larr; Prev</button>
+  <span class="counter"><span id="current">1</span> / <span id="total">9</span></span>
+  <button id="nextBtn" onclick="navigate(1)">Next &rarr;</button>
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  document.getElementById('total').textContent = total;
+
+  function show(idx) {
+    slides.forEach(s => s.classList.remove('active'));
+    slides[idx].classList.add('active');
+    document.getElementById('current').textContent = idx + 1;
+    document.getElementById('progress').style.width = ((idx + 1) / total * 100) + '%';
+    document.getElementById('prevBtn').style.opacity = idx === 0 ? '0.3' : '1';
+    document.getElementById('nextBtn').style.opacity = idx === total - 1 ? '0.3' : '1';
+  }
+
+  function navigate(dir) {
+    const next = current + dir;
+    if (next >= 0 && next < total) { current = next; show(current); }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') { current = 0; show(current); }
+    if (e.key === 'End') { current = total - 1; show(current); }
+  });
+
+  show(0);
+</script>
+</body>
+</html>

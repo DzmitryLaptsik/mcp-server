@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #0D1117; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  background: #0D1117; font-family: Arial, sans-serif;
+  display: flex; flex-direction: column;
+}
+.accent-bar { position: absolute; top: 0; left: 0; width: 100%; height: 4pt; background: #5EA8A7; }
+.header { margin: 20pt 40pt 0 40pt; }
+h1 { color: #FFFFFF; font-size: 30pt; margin: 0 0 3pt 0; }
+.underline { width: 60pt; height: 3pt; background: #5EA8A7; margin-bottom: 10pt; }
+.arch-container { display: flex; margin: 0 40pt; gap: 14pt; flex: 1; }
+.col { flex: 1; display: flex; flex-direction: column; gap: 6pt; }
+.box {
+  background: #161B22; border: 1pt solid #30363D; border-radius: 8pt;
+  padding: 10pt 14pt;
+}
+.box-accent { border-left: 3pt solid #5EA8A7; }
+.box-orange { border-left: 3pt solid #E3B341; }
+.box-purple { border-left: 3pt solid #A371F7; }
+.box-title { color: #FFFFFF; font-size: 13pt; font-weight: bold; margin: 0 0 2pt 0; }
+.box-sub { color: #8B949E; font-size: 10pt; margin: 0; }
+.arrow-container { display: flex; align-items: center; justify-content: center; padding: 2pt 0; }
+.arrow { color: #5EA8A7; font-size: 16pt; }
+.flow-label { color: #5EA8A7; font-size: 9pt; margin: 0; text-align: center; }
+.page-num { color: #484F58; font-size: 9pt; position: absolute; bottom: 12pt; right: 40pt; }
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+<div class="header">
+  <h1>Architecture</h1>
+  <div class="underline"></div>
+</div>
+<div class="arch-container">
+  <div class="col">
+    <div class="box box-accent">
+      <p class="box-title">React Frontend</p>
+      <p class="box-sub">Port 3000 | Vite + React</p>
+      <p class="box-sub">Chat UI, model selector, tools panel</p>
+    </div>
+    <div class="arrow-container"><p class="arrow">v</p></div>
+    <div class="box box-orange">
+      <p class="box-title">Chat API (Starlette)</p>
+      <p class="box-sub">Port 8001 | Multi-user auth</p>
+      <p class="box-sub">OpenRouter LLM | Per-user DB isolation</p>
+    </div>
+    <div class="arrow-container"><p class="arrow">v</p></div>
+    <div class="box box-purple">
+      <p class="box-title">MCP Server (FastMCP)</p>
+      <p class="box-sub">Port 8000 | Streamable HTTP</p>
+      <p class="box-sub">19 auto-discovered tools</p>
+    </div>
+  </div>
+  <div class="col">
+    <div class="box" style="background: #1A2233;">
+      <p class="box-title">Tool Auto-Discovery</p>
+      <p class="box-sub">@mcp.tool() decorator + pkgutil import</p>
+      <p class="box-sub">Add a file = tool is live. No registration.</p>
+    </div>
+    <div class="box" style="background: #1A2233;">
+      <p class="box-title">Data Tenancy</p>
+      <p class="box-sub">MCP path: global shared DB</p>
+      <p class="box-sub">Chat API path: data/user_id/ isolation</p>
+    </div>
+    <div class="box" style="background: #1A2233;">
+      <p class="box-title">LLM Integration</p>
+      <p class="box-sub">OpenRouter multi-model switching</p>
+      <p class="box-sub">Claude, GPT-4o, Gemini, Llama, DeepSeek</p>
+    </div>
+    <div class="box" style="background: #1A2233;">
+      <p class="box-title">Storage</p>
+      <p class="box-sub">aiosqlite per domain (notes, tasks, etc.)</p>
+      <p class="box-sub">Pydantic-Settings for config (.env)</p>
+    </div>
+  </div>
+</div>
+<p class="page-num">4</p>
+</body>
+</html>

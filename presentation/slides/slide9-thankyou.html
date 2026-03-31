@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #0D1117; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  background: #0D1117; font-family: Arial, sans-serif;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.accent-bar { position: absolute; top: 0; left: 0; width: 100%; height: 4pt; background: #5EA8A7; }
+.accent-bar-bottom { position: absolute; bottom: 0; left: 0; width: 100%; height: 4pt; background: #5EA8A7; }
+h1 { color: #FFFFFF; font-size: 54pt; margin: 0 0 12pt 0; text-align: center; }
+h2 { color: #8B949E; font-size: 24pt; margin: 0 0 30pt 0; font-weight: normal; text-align: center; }
+.links { display: flex; gap: 20pt; }
+.link-card {
+  background: #161B22; border: 1pt solid #30363D; border-radius: 8pt;
+  padding: 18pt 28pt; text-align: center; min-width: 120pt;
+}
+.link-label { color: #5EA8A7; font-size: 13pt; margin: 0 0 4pt 0; font-weight: bold; }
+.link-value { color: #FFFFFF; font-size: 17pt; margin: 0; }
+.tagline { color: #484F58; font-size: 13pt; margin-top: 30pt; text-align: center; }
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+<h1>Thank You!</h1>
+<h2>Questions & Demo</h2>
+<div class="links">
+  <div class="link-card">
+    <p class="link-label">MCP Server</p>
+    <p class="link-value">localhost:8000</p>
+  </div>
+  <div class="link-card">
+    <p class="link-label">Chat API</p>
+    <p class="link-value">localhost:8001</p>
+  </div>
+  <div class="link-card">
+    <p class="link-label">Frontend</p>
+    <p class="link-value">localhost:3000</p>
+  </div>
+</div>
+<p class="tagline">Built with FastMCP + Python + React | Hackathon 2026</p>
+<div class="accent-bar-bottom"></div>
+</body>
+</html>

@@ -102,14 +102,22 @@ def test_chat_no_messages(client):
 
 # --- Tools endpoint ---
 
+def test_tools_unauthorized(client):
+    res = client.get("/api/tools")
+    assert res.status_code == 401
+
+
 def test_tools_list(client):
-    # Force rebuild tool definitions
+    # Login to get a key
+    login_res = client.post("/api/auth/login", json={"name": "ToolsUser"})
+    key = login_res.json()["api_key"]
+
     from chat_api import _build_tool_definitions, _tool_definitions, _openai_tools
     _tool_definitions.clear()
     _openai_tools.clear()
     _build_tool_definitions()
 
-    res = client.get("/api/tools")
+    res = client.get("/api/tools", headers={"Authorization": f"Bearer {key}"})
     assert res.status_code == 200
     data = res.json()
     tools = data["tools"]
@@ -126,12 +134,15 @@ def test_tools_list(client):
 
 
 def test_tools_include_assistant(client):
+    login_res = client.post("/api/auth/login", json={"name": "AssistantUser"})
+    key = login_res.json()["api_key"]
+
     from chat_api import _build_tool_definitions, _tool_definitions, _openai_tools
     _tool_definitions.clear()
     _openai_tools.clear()
     _build_tool_definitions()
 
-    res = client.get("/api/tools")
+    res = client.get("/api/tools", headers={"Authorization": f"Bearer {key}"})
     tool_names = [t["name"] for t in res.json()["tools"]]
     assert "summarize_day" in tool_names
     # plan_meeting is conditional on CALENDAR_PROVIDER

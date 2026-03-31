@@ -431,6 +431,10 @@ async def chat(request: Request) -> JSONResponse:
 
 
 async def list_tools(request: Request) -> JSONResponse:
+    user = await _get_user(request)
+    if not user:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
     tools = []
     for t in _tool_definitions:
         meta = TOOL_META.get(t["name"], {})

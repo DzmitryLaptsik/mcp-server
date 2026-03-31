@@ -92,28 +92,61 @@ The system has two access paths with different security characteristics:
 - A crafted message could instruct the LLM to call tools with unintended arguments
 - Side-effect dedup mitigates exact-duplicate calls but not varied arguments
 
+## OWASP Top 10 Assessment
+
+| OWASP | Status | Details |
+|-------|--------|---------|
+| **A01 Broken Access Control** | Mitigated | Per-user DB isolation, auth on all state-changing endpoints, `/api/tools` requires auth. MCP path is shared (documented, localhost-only). |
+| **A02 Cryptographic Failures** | Mitigated | API keys hashed with SHA-256, secrets in `.env` (gitignored), OAuth tokens excluded from git. Note: keys use unsalted hash (acceptable for high-entropy tokens). |
+| **A03 Injection** | Mitigated | All SQL uses parameterized queries. No shell exec. Pydantic validates all inputs. react-markdown sanitizes HTML. |
+| **A04 Insecure Design** | Partial | Tool dedup prevents duplicates. 5-round tool loop cap. Request size limit. Missing: rate limiting on LLM proxy. |
+| **A05 Security Misconfiguration** | Mitigated | Localhost-only binding, CORS restricted, generic error messages. Docker volume mount is broad (dev convenience). |
+| **A06 Vulnerable Components** | OK | Dependencies pinned via `uv.lock`. No known CVEs at time of audit. |
+| **A07 Auth Failures** | Known limitation | Name-based auth is demo-grade (documented). Keys never expire. No rate limiting on login. |
+| **A08 Data Integrity** | OK | No deserialization of untrusted data. Pydantic models for all inputs. |
+| **A09 Logging & Monitoring** | Partial | Tool calls logged to stdout with user context. No structured audit log. |
+| **A10 SSRF** | Low risk | API URLs configurable via env vars. Requires host access to exploit. |
+
+## AI-Specific Security
+
+| Concern | Status |
+|---------|--------|
+| **Prompt injection** | Mitigated with system prompt rules (READ/WRITE tool separation), but not fully preventable. LLM can still be tricked. |
+| **Tool abuse** | Side-effect tools deduplicated. Destructive tools annotated with `destructiveHint=True`. 5-round cap on tool calls. |
+| **Cost exhaustion** | No per-user rate limiting on LLM calls. Each request can trigger up to 5 LLM calls. |
+| **Data exfiltration** | Per-user isolation prevents cross-user access. MCP path uses shared data (documented). |
+
 ## Hardening Roadmap
 
 ### Phase 1: Immediate (pre-production)
-- [x] Hash API keys at rest (store `sha256(key)`, compare on lookup) — **done**
-- [x] Re-login invalidates old key and generates new one — **done**
-- [ ] Add API key expiry (e.g., 30 days, auto-expire)
-- [ ] Add rate limiting on `/api/chat` (e.g., 60 requests/min per user)
-- [ ] Add rate limiting on external API calls (OpenWeather, NewsAPI)
+- [x] Hash API keys at rest (SHA-256) — **done**
+- [x] Re-login invalidates old key — **done**
+- [x] Parameterized SQL everywhere — **done**
+- [x] Input validation with max_length — **done**
+- [x] CORS restricted to localhost — **done**
+- [x] Error messages sanitized — **done**
+- [x] WAL mode + busy_timeout on all SQLite DBs — **done**
+- [x] `/api/tools` requires authentication — **done**
+- [ ] Add rate limiting on `/api/auth/login` and `/api/chat`
+- [ ] Add API key expiry (e.g., 24 hours)
+- [ ] Add Content-Security-Policy headers
 
 ### Phase 2: Multi-User Production
 - [ ] Replace name-based auth with OAuth provider (Google, GitHub)
-- [ ] Add password support or magic link login
+- [ ] Add salted hashing (bcrypt/argon2) for API keys
+- [ ] Per-user calendar OAuth tokens
 - [ ] Encrypt SQLite databases at rest
-- [ ] Add audit logging for tool invocations
-- [ ] Add user consent for tool actions (confirmation before write operations)
+- [ ] Structured audit logging for tool invocations
+- [ ] Add CSRF tokens on login endpoint
+- [ ] Set restrictive file permissions on token files (0600)
 
 ### Phase 3: Enterprise
 - [ ] Add MCP server authentication (token verification)
-- [ ] Per-user data isolation on MCP path (via session/token context)
+- [ ] Per-user data isolation on MCP path
 - [ ] TLS termination (HTTPS)
-- [ ] Secret management (vault, environment-specific key rotation)
+- [ ] Secret management (vault, key rotation)
 - [ ] SOC 2 / GDPR compliance (data retention, deletion, export)
+- [ ] Tool confirmation UX for destructive operations
 
 ## Reporting Security Issues
 

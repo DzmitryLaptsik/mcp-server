@@ -247,8 +247,9 @@ function App() {
 
   // Load tools
   useEffect(() => {
-    fetch('/api/tools').then(r => r.json()).then(data => setTools(data.tools || [])).catch(() => {})
-  }, [])
+    if (!user?.api_key) return
+    fetch('/api/tools', { headers: authHeaders() }).then(r => r.json()).then(data => setTools(data.tools || [])).catch(() => {})
+  }, [user])
 
   // Click outside tools panel
   useEffect(() => {

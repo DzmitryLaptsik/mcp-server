@@ -254,7 +254,7 @@ Chaining tools that combine multiple services:
 
 ## 6. Chat API (`chat_api.py`)
 
-The chat API bridges the React frontend with LLM providers via OpenRouter:
+The Chat API bridges the React frontend with LLM providers via OpenRouter. It connects to the MCP server as a client using `mcp.ClientSession` + `streamablehttp_client`:
 
 **Endpoints**:
 - `POST /api/auth/login` — register/login by name, returns API key
@@ -264,43 +264,46 @@ The chat API bridges the React frontend with LLM providers via OpenRouter:
 - `GET /api/health` — health check
 
 **Key features**:
+- **MCP client**: Connects to the MCP server on startup, fetches tool definitions, and routes all tool calls through MCP protocol. Single source of truth for tools.
 - **Multi-model**: Frontend sends `model` field, backend passes to OpenRouter. Supports Claude, GPT, Gemini, Llama, DeepSeek, etc.
-- **Tool execution loop**: Calls LLM → executes tool calls → feeds results back → repeats until text response. Max 5 rounds.
+- **Tool execution loop**: Calls LLM → executes tool calls via MCP → feeds results back → repeats until text response. Max 5 rounds.
 - **Side-effect dedup**: Tools like `create_note`, `set_reminder` are tracked — identical duplicate calls within a request are skipped.
 - **Tool metadata**: `TOOL_META` dict provides display names, emoji icons, categories, and template prompts for the frontend.
 
 ---
 
-## 7. Data Tenancy Model
-
-The project has two access paths with different data isolation behavior:
+## 7. Data & Architecture Model
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                   MCP Server (port 8000)                        │
-│  • Single-user / shared data                                    │
-│  • Tools read/write to default DB paths (notes.db, tasks.db)   │
-│  • Resources expose global data                                 │
-│  • No authentication                                            │
-│  • Designed for: local MCP clients (Claude Desktop, Cursor)     │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                   Chat API (port 8001)                           │
-│  • Multi-user / per-user data isolation                         │
-│  • Each user gets own DB files in data/{user_id}/               │
-│  • API key auth (Bearer token)                                  │
-│  • Designed for: React frontend, multi-user demos               │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                   React Frontend (port 3000)                      │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │  /api/* (auth required)
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                   Chat API (port 8001)                            │
+│  • API key auth (Bearer token, hashed at rest)                   │
+│  • Routes tool calls through MCP protocol                        │
+│  • LLM integration via OpenRouter                                │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │  MCP protocol (streamable HTTP)
+                             ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                   MCP Server (port 8000)                          │
+│  • 21+ auto-discovered tools                                     │
+│  • Shared SQLite databases (notes.db, tasks.db, etc.)            │
+│  • Also accessible by IDE clients (Claude Desktop, Cursor)       │
+│  • No authentication (localhost-only)                             │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-**Why two modes?** The MCP protocol is designed for local, single-user clients (your IDE, your desktop app). The chat API adds multi-user support for the web frontend. Both paths use the same tool services — the difference is how DB paths are resolved.
+**All tool calls go through MCP protocol.** The Chat API connects as an MCP client on startup, fetches the tool list, and forwards every LLM tool call to the MCP server. This means tools are defined once and used everywhere.
 
-**Shared tools** (same behavior in both paths): weather, forecast, temperature, timezone, news — these are stateless or use external APIs.
+**Data is shared** across all users and access paths. The MCP protocol does not support per-user context, so all notes, tasks, reminders, and time tracking data lives in shared SQLite databases. Auth protects the Chat API endpoints but not the underlying data.
 
-**User-scoped tools** (isolated in chat API, global in MCP): notes, tasks, reminders, time tracking — these read/write SQLite databases.
+**Stateless tools** (weather, timezone, temperature, news) have no data isolation concerns — they call external APIs or use stdlib.
 
-**Calendar tools**: use provider-level auth (Google/Outlook OAuth), shared across paths.
+**Calendar tools** use provider-level OAuth, shared across all access paths.
 
 ---
 

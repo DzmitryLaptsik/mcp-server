@@ -80,12 +80,18 @@ The system has two access paths with different security characteristics:
 
 **Why this is acceptable for the demo**: The system runs locally, behind `127.0.0.1`. Name-based login eliminates signup friction for live demos. The API key provides per-session isolation, not account security.
 
+### Data Isolation
+- **Shared databases**: All tool calls (both MCP and Chat API) use shared global SQLite databases. There is no per-user data isolation at the storage level.
+- **Chat API auth** protects endpoints but not data — authenticated users share the same notes, tasks, reminders, and time tracking data.
+- **Resources expose global data**: `notes://recent`, `tasks://pending`, etc. are shared across all users.
+
+**Why this is acceptable**: The Chat API connects to the MCP server as an MCP client — all tool calls go through the MCP protocol, which is the core value proposition. The MCP spec does not define per-user context for tool calls. For the hackathon, shared data demonstrates the architecture correctly. Per-user isolation would require a session-aware MCP extension (Phase 2).
+
 ### MCP Server Path
 - **No authentication**: MCP protocol on port 8000 has no auth mechanism
-- **Shared data**: Notes, tasks, reminders use global database paths (not per-user)
-- **Resources expose global data**: `notes://recent`, `tasks://pending`, etc. are shared
+- **Any local process** can connect and call tools
 
-**Why this is acceptable**: MCP is designed for local, single-user clients (Claude Desktop, Cursor). The server binds to localhost only. The MCP spec does not define a standard auth mechanism for streamable HTTP transport.
+**Why this is acceptable**: MCP is designed for local, single-user clients (Claude Desktop, Cursor). The server binds to localhost only.
 
 ### Prompt Injection
 - User messages are passed to the LLM with tool-calling enabled
@@ -96,7 +102,7 @@ The system has two access paths with different security characteristics:
 
 | OWASP | Status | Details |
 |-------|--------|---------|
-| **A01 Broken Access Control** | Mitigated | Per-user DB isolation, auth on all state-changing endpoints, `/api/tools` requires auth. MCP path is shared (documented, localhost-only). |
+| **A01 Broken Access Control** | Partial | Auth on all Chat API endpoints. Data is shared (no per-user DB isolation) — all users see same notes/tasks. MCP path has no auth (localhost-only). |
 | **A02 Cryptographic Failures** | Mitigated | API keys hashed with SHA-256, secrets in `.env` (gitignored), OAuth tokens excluded from git. Note: keys use unsalted hash (acceptable for high-entropy tokens). |
 | **A03 Injection** | Mitigated | All SQL uses parameterized queries. No shell exec. Pydantic validates all inputs. react-markdown sanitizes HTML. |
 | **A04 Insecure Design** | Partial | Tool dedup prevents duplicates. 5-round tool loop cap. Request size limit. Missing: rate limiting on LLM proxy. |
@@ -132,6 +138,7 @@ The system has two access paths with different security characteristics:
 - [ ] Add Content-Security-Policy headers
 
 ### Phase 2: Multi-User Production
+- [ ] Per-user data isolation via MCP session context or per-user MCP server instances
 - [ ] Replace name-based auth with OAuth provider (Google, GitHub)
 - [ ] Add salted hashing (bcrypt/argon2) for API keys
 - [ ] Per-user calendar OAuth tokens

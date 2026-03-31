@@ -42,6 +42,8 @@ TOOL_META = {
     "search_notes":        {"label": "Search Notes",          "icon": "🔍", "category": "Notes",        "template": "Search my notes for {keyword}"},
     "list_notes":          {"label": "All Notes",             "icon": "📒", "category": "Notes",        "template": "Show all my notes"},
     "create_task":         {"label": "Create Task",           "icon": "✅", "category": "Tasks",        "template": "Create a task: {title}, {priority} priority, due {date}"},
+    "update_task":         {"label": "Update Task",           "icon": "✏️", "category": "Tasks",        "template": "Mark task {id} as done"},
+    "delete_task":         {"label": "Delete Task",           "icon": "🗑️", "category": "Tasks",        "template": "Delete task {id}"},
     "list_tasks":          {"label": "List Tasks",            "icon": "📋", "category": "Tasks",        "template": "Show my {pending/overdue/all} tasks"},
     "track_time":          {"label": "Time Tracker",          "icon": "⏱️", "category": "Productivity", "template": "{Start/Stop} tracking time on {project name}"},
     "list_active_timers":  {"label": "Active Timers",         "icon": "🔄", "category": "Productivity", "template": "What timers are running?"},
@@ -71,7 +73,7 @@ def _build_tool_definitions():
     from tools.timezone import TimezoneConvertInput, WorldTimeInput
     from tools.weather.schemas import ForecastInput, WeatherInput
     from tools.notes.schemas import CreateNoteInput, ListNotesInput, SearchNotesInput
-    from tools.tasks.schemas import CreateTaskInput, ListTasksInput
+    from tools.tasks.schemas import CreateTaskInput, DeleteTaskInput, ListTasksInput, UpdateTaskInput
     from tools.timetracker.schemas import ListTimeEntriesInput, TimeSummaryInput, TrackTimeInput
     from tools.reminders.schemas import ListRemindersInput, SetReminderInput
     from tools.news.schemas import NewsInput
@@ -91,8 +93,10 @@ def _build_tool_definitions():
         ("create_note", "WRITE: Save a NEW note. Only call this when user explicitly asks to save/create/write a note. Do NOT call when user asks to see or search notes.", CreateNoteInput),
         ("search_notes", "READ: Search existing notes by keyword or phrase. Use when user asks to find or search for specific notes.", SearchNotesInput),
         ("list_notes", "READ: List all notes, most recent first. Use when user asks to show, list, or see all their notes. Optionally filter by tag.", ListNotesInput),
-        ("create_task", "WRITE: Create a NEW task. Only call this when user explicitly asks to add/create a task. Do NOT call when user asks to see or list tasks.", CreateTaskInput),
-        ("list_tasks", "READ: List existing tasks with optional filters by status, priority, project, or overdue. Use this when user asks to show, list, or check tasks.", ListTasksInput),
+        ("create_task", "WRITE: Create a NEW task. Only call when user explicitly asks to add/create a task.", CreateTaskInput),
+        ("update_task", "WRITE: Update an existing task — change status (done/in_progress), priority, title, or due date. Use when user asks to complete, update, or modify a task. Requires task ID.", UpdateTaskInput),
+        ("delete_task", "WRITE: Delete a task by ID. Only call when user explicitly asks to delete/remove a task.", DeleteTaskInput),
+        ("list_tasks", "READ: List existing tasks with optional filters by status, priority, project, or overdue.", ListTasksInput),
         ("track_time", "WRITE: Start or stop a time tracking timer on a project. Only call when user explicitly asks to start/stop tracking.", TrackTimeInput),
         ("list_active_timers", "READ: Show currently running timers. Use when user asks what timers are active or running right now.", None),
         ("list_time_entries", "READ: Show time tracking history — individual sessions with start/stop times and durations. Use when user asks to see their tracked time, time entries, or time log.", ListTimeEntriesInput),
@@ -172,10 +176,12 @@ def _build_user_handlers(user_id: str) -> dict[str, Any]:
     handlers["search_notes"] = lambda args, svc=notes_svc: _async_handler(svc.search_notes, SearchNotesInput(**args))
     handlers["list_notes"] = lambda args, svc=notes_svc: _async_handler(svc.list_notes, ListNotesInput(**args))
 
-    from tools.tasks.schemas import CreateTaskInput, ListTasksInput
+    from tools.tasks.schemas import CreateTaskInput, DeleteTaskInput, ListTasksInput, UpdateTaskInput
     from tools.tasks.service import TasksService
     tasks_svc = TasksService(db_path=get_user_db_path(user_id, "tasks.db"))
     handlers["create_task"] = lambda args, svc=tasks_svc: _async_handler(svc.create_task, CreateTaskInput(**args))
+    handlers["update_task"] = lambda args, svc=tasks_svc: _async_handler(svc.update_task, UpdateTaskInput(**args))
+    handlers["delete_task"] = lambda args, svc=tasks_svc: _async_handler(svc.delete_task, DeleteTaskInput(**args))
     handlers["list_tasks"] = lambda args, svc=tasks_svc: _async_handler(svc.list_tasks, ListTasksInput(**args))
 
     from tools.timetracker.schemas import ListTimeEntriesInput, TimeSummaryInput, TrackTimeInput

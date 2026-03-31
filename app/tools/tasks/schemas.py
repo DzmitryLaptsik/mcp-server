@@ -42,6 +42,24 @@ class ListTasksInput(BaseModel):
     overdue: Optional[bool] = Field(None, description="If true, show only overdue tasks (past due_date and not done)")
 
 
+class UpdateTaskInput(BaseModel):
+    id: int = Field(..., description="Task ID to update")
+    status: Optional[TaskStatus] = Field(None, description="New status: pending, in_progress, or done")
+    priority: Optional[TaskPriority] = Field(None, description="New priority: low, medium, or high")
+    title: Optional[str] = Field(None, max_length=500, description="New title")
+    due_date: Optional[str] = Field(None, description="New due date in YYYY-MM-DD format")
+
+
+class DeleteTaskInput(BaseModel):
+    id: int = Field(..., description="Task ID to delete")
+
+
+class DeleteTaskOutput(BaseModel):
+    id: int
+    deleted: bool
+    message: str
+
+
 class ListTasksOutput(BaseModel):
     tasks: list[TaskResponse]
     total: int

@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 import aiosqlite
 
+from utils.db import ensure_table, get_db
 from utils.dotenv_config import settings
 
 
@@ -18,16 +19,14 @@ def _get_auth_db_path() -> str:
     return os.path.join(settings.USER_DATA_DIR, "auth.db")
 
 
-async def _ensure_table(db: aiosqlite.Connection):
-    await db.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            api_key_hash TEXT UNIQUE NOT NULL,
-            created_at TEXT NOT NULL
-        )
-    """)
-    await db.commit()
+AUTH_CREATE_TABLE = """
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        api_key_hash TEXT UNIQUE NOT NULL,
+        created_at TEXT NOT NULL
+    )
+"""
 
 
 def _generate_user_id(name: str) -> str:
@@ -53,8 +52,8 @@ async def login(name: str) -> dict:
 
     user_id = _generate_user_id(name)
 
-    async with aiosqlite.connect(_get_auth_db_path()) as db:
-        await _ensure_table(db)
+    async with get_db(_get_auth_db_path()) as db:
+        await ensure_table(db, _get_auth_db_path(), AUTH_CREATE_TABLE)
         db.row_factory = aiosqlite.Row
 
         # Check if user exists
@@ -102,8 +101,8 @@ async def get_user_by_api_key(api_key: str) -> dict | None:
 
     key_hash = _hash_api_key(api_key)
 
-    async with aiosqlite.connect(_get_auth_db_path()) as db:
-        await _ensure_table(db)
+    async with get_db(_get_auth_db_path()) as db:
+        await ensure_table(db, _get_auth_db_path(), AUTH_CREATE_TABLE)
         db.row_factory = aiosqlite.Row
 
         cursor = await db.execute("SELECT * FROM users WHERE api_key_hash = ?", (key_hash,))

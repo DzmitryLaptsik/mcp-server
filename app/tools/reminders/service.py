@@ -3,30 +3,28 @@ from datetime import datetime, timedelta, timezone
 import aiosqlite
 
 from tools.reminders.schemas import ListRemindersOutput, ReminderResponse, SetReminderInput
+from utils.db import ensure_table, get_db
 from utils.dotenv_config import settings
+
+CREATE_TABLE = """
+    CREATE TABLE IF NOT EXISTS reminders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL,
+        remind_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        is_fired INTEGER NOT NULL DEFAULT 0
+    )
+"""
 
 
 class RemindersService:
     def __init__(self, db_path: str | None = None):
         self.db_path = db_path or settings.REMINDERS_DB_PATH
 
-    async def _ensure_table(self, db: aiosqlite.Connection):
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS reminders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                message TEXT NOT NULL,
-                remind_at TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                is_fired INTEGER NOT NULL DEFAULT 0
-            )
-        """)
-        await db.commit()
-
     async def set_reminder(self, input: SetReminderInput) -> ReminderResponse:
         now = datetime.now(timezone.utc)
 
         if input.remind_at:
-            # Parse absolute time
             for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M"):
                 try:
                     remind_at = datetime.strptime(input.remind_at, fmt).replace(tzinfo=timezone.utc)
@@ -40,8 +38,8 @@ class RemindersService:
         else:
             raise ValueError("You must provide either 'remind_at' (absolute time) or 'remind_in_minutes' (relative offset).")
 
-        async with aiosqlite.connect(self.db_path) as db:
-            await self._ensure_table(db)
+        async with get_db(self.db_path) as db:
+            await ensure_table(db, self.db_path, CREATE_TABLE)
             cursor = await db.execute(
                 "INSERT INTO reminders (message, remind_at, created_at) VALUES (?, ?, ?)",
                 (input.message, remind_at.isoformat(), now.isoformat()),
@@ -56,8 +54,8 @@ class RemindersService:
             )
 
     async def list_reminders(self, include_fired: bool = False) -> ListRemindersOutput:
-        async with aiosqlite.connect(self.db_path) as db:
-            await self._ensure_table(db)
+        async with get_db(self.db_path) as db:
+            await ensure_table(db, self.db_path, CREATE_TABLE)
             db.row_factory = aiosqlite.Row
 
             # Auto-mark expired reminders as fired
@@ -69,10 +67,9 @@ class RemindersService:
             await db.commit()
 
             if include_fired:
-                query = "SELECT * FROM reminders ORDER BY remind_at ASC"
+                query = "SELECT * FROM reminders ORDER BY remind_at ASC LIMIT 100"
             else:
-                # Only show future (unfired) reminders
-                query = "SELECT * FROM reminders WHERE is_fired = 0 ORDER BY remind_at ASC"
+                query = "SELECT * FROM reminders WHERE is_fired = 0 ORDER BY remind_at ASC LIMIT 100"
 
             cursor = await db.execute(query)
             rows = await cursor.fetchall()

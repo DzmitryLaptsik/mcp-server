@@ -89,16 +89,12 @@ async def get_pending_reminders() -> str:
 @mcp.resource("timetracker://active")
 async def get_active_timers() -> str:
     """Currently running time tracking entries."""
-    import aiosqlite
-    svc_path = settings.TIMETRACKER_DB_PATH
+    from tools.timetracker.service import TimeTrackerService
+
     try:
-        async with aiosqlite.connect(svc_path) as db:
-            db.row_factory = aiosqlite.Row
-            cursor = await db.execute(
-                "SELECT project, started_at FROM time_entries WHERE stopped_at IS NULL"
-            )
-            rows = await cursor.fetchall()
-            active = [{"project": r["project"], "started_at": r["started_at"]} for r in rows]
-            return json.dumps(active, indent=2)
+        svc = TimeTrackerService()
+        result = await svc.list_active_timers()
+        active = [{"project": t.project, "started_at": t.started_at, "running_for": t.running_for} for t in result.timers]
+        return json.dumps(active, indent=2)
     except Exception:
         return json.dumps([])

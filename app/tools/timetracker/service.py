@@ -15,7 +15,17 @@ from tools.timetracker.schemas import (
     TrackTimeInput,
     TrackTimeOutput,
 )
+from utils.db import ensure_table, get_db
 from utils.dotenv_config import settings
+
+CREATE_TABLE = """
+    CREATE TABLE IF NOT EXISTS time_entries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        stopped_at TEXT
+    )
+"""
 
 
 def _format_duration(minutes: int) -> str:
@@ -29,30 +39,24 @@ class TimeTrackerService:
     def __init__(self, db_path: str | None = None):
         self.db_path = db_path or settings.TIMETRACKER_DB_PATH
 
-    async def _ensure_table(self, db: aiosqlite.Connection):
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS time_entries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                project TEXT NOT NULL,
-                started_at TEXT NOT NULL,
-                stopped_at TEXT
-            )
-        """)
-        await db.commit()
-
     async def track_time(self, input: TrackTimeInput) -> TrackTimeOutput:
-        async with aiosqlite.connect(self.db_path) as db:
-            await self._ensure_table(db)
+        async with get_db(self.db_path) as db:
+            await ensure_table(db, self.db_path, CREATE_TABLE)
             db.row_factory = aiosqlite.Row
 
             if input.action == TrackAction.START:
-                # Check for already running timer on this project
+                # Atomic check-and-insert to prevent race conditions
+                now = datetime.now(timezone.utc).isoformat()
                 cursor = await db.execute(
-                    "SELECT id FROM time_entries WHERE project = ? AND stopped_at IS NULL",
-                    (input.project,),
+                    "INSERT OR IGNORE INTO time_entries (project, started_at) "
+                    "SELECT ?, ? WHERE NOT EXISTS ("
+                    "  SELECT 1 FROM time_entries WHERE project = ? AND stopped_at IS NULL"
+                    ")",
+                    (input.project, now, input.project),
                 )
-                existing = await cursor.fetchone()
-                if existing:
+                await db.commit()
+
+                if cursor.rowcount == 0:
                     return TrackTimeOutput(
                         action="start",
                         project=input.project,
@@ -66,13 +70,6 @@ class TimeTrackerService:
                 )
                 prev_row = await cursor.fetchone()
                 prev_count = prev_row["cnt"] if prev_row else 0
-
-                now = datetime.now(timezone.utc).isoformat()
-                await db.execute(
-                    "INSERT INTO time_entries (project, started_at) VALUES (?, ?)",
-                    (input.project, now),
-                )
-                await db.commit()
 
                 msg = f"Started tracking time for '{input.project}' (new session)."
                 if prev_count > 0:
@@ -114,62 +111,10 @@ class TimeTrackerService:
                     duration=_format_duration(duration_minutes),
                 )
 
-    async def get_time_summary(self, input: TimeSummaryInput) -> TimeSummaryOutput:
-        now = datetime.now(timezone.utc)
-
-        if input.end_date:
-            end = datetime.strptime(input.end_date, "%Y-%m-%d").replace(
-                hour=23, minute=59, second=59, tzinfo=timezone.utc
-            )
-        else:
-            end = now
-
-        if input.start_date:
-            start = datetime.strptime(input.start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        else:
-            # Default to Monday of current week
-            start = (end - timedelta(days=end.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-
-        async with aiosqlite.connect(self.db_path) as db:
-            await self._ensure_table(db)
-            db.row_factory = aiosqlite.Row
-
-            cursor = await db.execute(
-                "SELECT project, started_at, stopped_at FROM time_entries WHERE started_at >= ? AND started_at <= ? AND stopped_at IS NOT NULL",
-                (start.isoformat(), end.isoformat()),
-            )
-            rows = await cursor.fetchall()
-
-            project_minutes: dict[str, int] = {}
-            for row in rows:
-                started = datetime.fromisoformat(row["started_at"])
-                stopped = datetime.fromisoformat(row["stopped_at"])
-                minutes = int((stopped - started).total_seconds() / 60)
-                project_minutes[row["project"]] = project_minutes.get(row["project"], 0) + minutes
-
-            projects = [
-                ProjectTime(
-                    project=name,
-                    total_minutes=mins,
-                    formatted=_format_duration(mins),
-                )
-                for name, mins in sorted(project_minutes.items(), key=lambda x: x[1], reverse=True)
-            ]
-
-            total = sum(p.total_minutes for p in projects)
-
-            return TimeSummaryOutput(
-                start_date=start.strftime("%Y-%m-%d"),
-                end_date=end.strftime("%Y-%m-%d"),
-                projects=projects,
-                total_minutes=total,
-                total_formatted=_format_duration(total),
-            )
-
     async def list_active_timers(self) -> ActiveTimersOutput:
         now = datetime.now(timezone.utc)
-        async with aiosqlite.connect(self.db_path) as db:
-            await self._ensure_table(db)
+        async with get_db(self.db_path) as db:
+            await ensure_table(db, self.db_path, CREATE_TABLE)
             db.row_factory = aiosqlite.Row
 
             cursor = await db.execute(
@@ -198,8 +143,8 @@ class TimeTrackerService:
 
     async def list_time_entries(self, input: ListTimeEntriesInput) -> ListTimeEntriesOutput:
         now = datetime.now(timezone.utc)
-        async with aiosqlite.connect(self.db_path) as db:
-            await self._ensure_table(db)
+        async with get_db(self.db_path) as db:
+            await ensure_table(db, self.db_path, CREATE_TABLE)
             db.row_factory = aiosqlite.Row
 
             if input.project:
@@ -239,3 +184,54 @@ class TimeTrackerService:
                     ))
 
             return ListTimeEntriesOutput(entries=entries, total=len(entries))
+
+    async def get_time_summary(self, input: TimeSummaryInput) -> TimeSummaryOutput:
+        now = datetime.now(timezone.utc)
+
+        if input.end_date:
+            end = datetime.strptime(input.end_date, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, tzinfo=timezone.utc
+            )
+        else:
+            end = now
+
+        if input.start_date:
+            start = datetime.strptime(input.start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        else:
+            start = (end - timedelta(days=end.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+
+        async with get_db(self.db_path) as db:
+            await ensure_table(db, self.db_path, CREATE_TABLE)
+            db.row_factory = aiosqlite.Row
+
+            cursor = await db.execute(
+                "SELECT project, started_at, stopped_at FROM time_entries WHERE started_at >= ? AND started_at <= ? AND stopped_at IS NOT NULL",
+                (start.isoformat(), end.isoformat()),
+            )
+            rows = await cursor.fetchall()
+
+            project_minutes: dict[str, int] = {}
+            for row in rows:
+                started = datetime.fromisoformat(row["started_at"])
+                stopped = datetime.fromisoformat(row["stopped_at"])
+                minutes = int((stopped - started).total_seconds() / 60)
+                project_minutes[row["project"]] = project_minutes.get(row["project"], 0) + minutes
+
+            projects = [
+                ProjectTime(
+                    project=name,
+                    total_minutes=mins,
+                    formatted=_format_duration(mins),
+                )
+                for name, mins in sorted(project_minutes.items(), key=lambda x: x[1], reverse=True)
+            ]
+
+            total = sum(p.total_minutes for p in projects)
+
+            return TimeSummaryOutput(
+                start_date=start.strftime("%Y-%m-%d"),
+                end_date=end.strftime("%Y-%m-%d"),
+                projects=projects,
+                total_minutes=total,
+                total_formatted=_format_duration(total),
+            )

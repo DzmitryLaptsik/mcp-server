@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from tools.notes.schemas import CreateNoteInput, NoteResponse, SearchNotesInput, SearchNotesOutput
+from tools.notes.schemas import CreateNoteInput, ListNotesInput, NoteResponse, SearchNotesInput, SearchNotesOutput
 from tools.notes.service import NotesService
 
 
@@ -67,3 +67,32 @@ async def test_search_notes_returns_most_recent_first(notes_service: NotesServic
     assert result.total == 2
     assert result.notes[0].id == 2  # most recent first
     assert result.notes[1].id == 1
+
+
+# --- list_notes ---
+
+async def test_list_notes_returns_all(notes_service: NotesService):
+    await notes_service.create_note(CreateNoteInput(content="Note one"))
+    await notes_service.create_note(CreateNoteInput(content="Note two"))
+    await notes_service.create_note(CreateNoteInput(content="Note three"))
+
+    result = await notes_service.list_notes(ListNotesInput())
+    assert result.total == 3
+    assert result.notes[0].content == "Note three"  # most recent first
+
+
+async def test_list_notes_with_tag_filter(notes_service: NotesService):
+    await notes_service.create_note(CreateNoteInput(content="Work stuff", tags=["work"]))
+    await notes_service.create_note(CreateNoteInput(content="Personal stuff", tags=["personal"]))
+
+    result = await notes_service.list_notes(ListNotesInput(tag="work"))
+    assert result.total == 1
+    assert result.notes[0].content == "Work stuff"
+
+
+async def test_list_notes_respects_limit(notes_service: NotesService):
+    for i in range(5):
+        await notes_service.create_note(CreateNoteInput(content=f"Note {i}"))
+
+    result = await notes_service.list_notes(ListNotesInput(limit=2))
+    assert result.total == 2
